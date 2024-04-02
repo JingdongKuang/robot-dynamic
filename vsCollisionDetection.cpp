@@ -484,6 +484,9 @@ MatrixXd getMassMatrix(const VectorXd q) {
 *	基于拉格朗日方程的动力学模型，用于计算关节力矩
 ***********************************************/
 VectorXd getTorque(const VectorXd q,const VectorXd q_dot, const VectorXd q_dot_dot,const MatrixXd M_past, const MatrixXd M_now,const double T) {
+	//目前构型下机器人的杆长
+	double l[4];
+	l[0] = 0.22; l[1] = 0.455; l[2] = 0.495; l[3] = 0.1565;
 	//质量
 	double m[6];
 	m[0] = 8.30269;
@@ -493,7 +496,7 @@ VectorXd getTorque(const VectorXd q,const VectorXd q_dot, const VectorXd q_dot_d
 	m[4] = 2.66205;
 	m[5] = 0.60427;
 	//重力
-	VectorXd g(4);
+	MatrixXd g(1,4);
 	g<< 0, 0, 9.8, 0;
 	//重心位置
 	Vector4d r[6];
@@ -521,7 +524,7 @@ VectorXd getTorque(const VectorXd q,const VectorXd q_dot, const VectorXd q_dot_d
 				0,		0.495,	0,		PI / 2,
 				0,		0,		0,		-PI / 2,
 				0,		0.1565, 0,		0;
-
+	
 
 	Matrix4d T01 = DH2Trans(DH_Table(0, 0) + q1, DH_Table(0, 1), DH_Table(0, 2), DH_Table(0, 3));
 	Matrix4d T12 = DH2Trans(DH_Table(1, 0) + q2, DH_Table(1, 1), DH_Table(1, 2), DH_Table(1, 3));
@@ -534,7 +537,14 @@ VectorXd getTorque(const VectorXd q,const VectorXd q_dot, const VectorXd q_dot_d
 	Matrix4d T04 = T03 * T34;
 	Matrix4d T05 = T04 * T45;
 	Matrix4d T06 = T05 * T56;
-
+	//此处获得T01~T56各个齐次矩阵的导数，用于后续计算
+	Matrix4d dTdq[6];
+	dTdq[0] << -sin(q1), 0, cos(q1), 0, cos(q1), 0, sin(q1), 0, 0, 0, 0, 0, 0, 0, 0, 0;
+	dTdq[1] << -cos(q2), sin(q2), 0, -l[1] * cos(q2), -sin(q2), -cos(q2), 0, -l[1] * sin(q2), 0, 0, 0, 0, 0, 0, 0, 0;
+	dTdq[2] << -sin(q3), 0, cos(q3), 0, cos(q3), 0, sin(q3), 0, 0, 0, 0, 0, 0, 0, 0, 0;
+	dTdq[2] << -sin(q4), 0, cos(q4), 0, cos(q4), 0, sin(q4), 0, 0, 0, 0, 0, 0, 0, 0, 0;
+	dTdq[4] << -sin(q5), 0, -cos(q5), 0, cos(q5), 0, -sin(q5), 0, 0, 0, 0, 0, 0, 0, 0, 0;
+	dTdq[5] << -sin(q6), -cos(q6), 0, 0,cos(q6), -sin(q6), 0, 0 ,  0, 0, 0, 0 ,  0, 0, 0, 0;
 	//计算拉格朗日方程中对q求偏导的项，通过数值方法求得
 	double delta = 0.000000001;//数值微分的步长
 	//每个分量的小变化
@@ -570,7 +580,14 @@ VectorXd getTorque(const VectorXd q,const VectorXd q_dot, const VectorXd q_dot_d
 	VectorXd G(6);
 
 	G(0) = 0;
-	G(1) =
+	G(1) = 0;
+	G(2) = 0;
+	G(3) = 0;
+	G(4) = 0;
+	double aaa;
+	aaa= double(m[5] * g * T05 * dTdq[5] * r[5]);
+	cout<<"gg" << aaa << endl;
+	//G(5) = m[5] * g * T05 * dTdq[5] * r[5];
 	/*
 	G(1) = 37.9871 * (-0.00001 * cos(q2) - 0.19408 * sin(q2)) +
 		52.103 * (0.04121 * cos(q2) * cos(q3) -
