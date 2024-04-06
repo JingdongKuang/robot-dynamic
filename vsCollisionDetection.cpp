@@ -9,6 +9,24 @@ using namespace std;
 #define toRad 0.01745329252
 //rot 4d
 
+Matrix4d inverseHomogeneousTransform(const Matrix4d& transform) {
+	// Extract rotation matrix and translation vector from homogeneous transform
+	Matrix3d rotationMatrix = transform.block<3, 3>(0, 0);
+	Vector3d translationVector = transform.block<3, 1>(0, 3);
+
+	// Compute inverse of rotation matrix
+	Matrix3d inverseRotationMatrix = rotationMatrix.transpose();
+
+	// Compute inverse of translation vector
+	Vector3d inverseTranslationVector = -inverseRotationMatrix * translationVector;
+
+	// Construct the inverse homogeneous transform
+	Matrix4d inverseTransform = Eigen::Matrix4d::Identity();
+	inverseTransform.block<3, 3>(0, 0) = inverseRotationMatrix;
+	inverseTransform.block<3, 1>(0, 3) = inverseTranslationVector;
+
+	return inverseTransform;
+}
 Matrix4d rotx4d(const double angle)
 
 {
@@ -484,9 +502,6 @@ MatrixXd getMassMatrix(const VectorXd q) {
 *	基于拉格朗日方程的动力学模型，用于计算关节力矩
 ***********************************************/
 VectorXd getTorque(const VectorXd q,const VectorXd q_dot, const VectorXd q_dot_dot,const MatrixXd M_past, const MatrixXd M_now,const double T) {
-	//目前构型下机器人的杆长
-	double l[4];
-	l[0] = 0.22; l[1] = 0.455; l[2] = 0.495; l[3] = 0.1565;
 	//质量
 	double m[6];
 	m[0] = 8.30269;
@@ -496,7 +511,7 @@ VectorXd getTorque(const VectorXd q,const VectorXd q_dot, const VectorXd q_dot_d
 	m[4] = 2.66205;
 	m[5] = 0.60427;
 	//重力
-	MatrixXd g(1,4);
+	MatrixXd g(1, 4);
 	g<< 0, 0, 9.8, 0;
 	//重心位置
 	Vector4d r[6];
@@ -524,7 +539,7 @@ VectorXd getTorque(const VectorXd q,const VectorXd q_dot, const VectorXd q_dot_d
 				0,		0.495,	0,		PI / 2,
 				0,		0,		0,		-PI / 2,
 				0,		0.1565, 0,		0;
-	
+
 
 	Matrix4d T01 = DH2Trans(DH_Table(0, 0) + q1, DH_Table(0, 1), DH_Table(0, 2), DH_Table(0, 3));
 	Matrix4d T12 = DH2Trans(DH_Table(1, 0) + q2, DH_Table(1, 1), DH_Table(1, 2), DH_Table(1, 3));
@@ -540,16 +555,15 @@ VectorXd getTorque(const VectorXd q,const VectorXd q_dot, const VectorXd q_dot_d
 	//此处获得T01~T56各个齐次矩阵的导数，用于后续计算
 	Matrix4d dTdq[6];
 	dTdq[0] << -sin(q1), 0, cos(q1), 0, cos(q1), 0, sin(q1), 0, 0, 0, 0, 0, 0, 0, 0, 0;
-	dTdq[1] << -cos(q2), sin(q2), 0, -l[1] * cos(q2), -sin(q2), -cos(q2), 0, -l[1] * sin(q2), 0, 0, 0, 0, 0, 0, 0, 0;
+	dTdq[1] << -cos(q2), sin(q2), 0, DH_Table(1, 2)* cos(q2), -sin(q2), -cos(q2), 0, DH_Table(1, 2)* sin(q2), 0, 0, 0, 0, 0, 0, 0, 0;
 	dTdq[2] << -sin(q3), 0, cos(q3), 0, cos(q3), 0, sin(q3), 0, 0, 0, 0, 0, 0, 0, 0, 0;
 	dTdq[2] << -sin(q4), 0, cos(q4), 0, cos(q4), 0, sin(q4), 0, 0, 0, 0, 0, 0, 0, 0, 0;
 	dTdq[4] << -sin(q5), 0, -cos(q5), 0, cos(q5), 0, -sin(q5), 0, 0, 0, 0, 0, 0, 0, 0, 0;
-	dTdq[5] << -sin(q6), -cos(q6), 0, 0,cos(q6), -sin(q6), 0, 0 ,  0, 0, 0, 0 ,  0, 0, 0, 0;
+	dTdq[5] << -sin(q6), -cos(q6), 0, 0, cos(q6), -sin(q6), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
 	//计算拉格朗日方程中对q求偏导的项，通过数值方法求得
 	double delta = 0.000000001;//数值微分的步长
 	//每个分量的小变化
 	MatrixXd q_ = MatrixXd::Identity(6, 6);
-
 	//计算每个分量的小变化对应的质量矩阵
 	MatrixXd dMdq0(6, 6);
 	MatrixXd dMdq1(6, 6);
@@ -578,16 +592,33 @@ VectorXd getTorque(const VectorXd q,const VectorXd q_dot, const VectorXd q_dot_d
 
 	//计算重力矩
 	VectorXd G(6);
-
-	G(0) = 0;
-	G(1) = 0;
-	G(2) = 0;
-	G(3) = 0;
-	G(4) = 0;
-	double aaa;
-	aaa= double(m[5] * g * T05 * dTdq[5] * r[5]);
-	cout<<"gg" << aaa << endl;
-	//G(5) = m[5] * g * T05 * dTdq[5] * r[5];
+	MatrixXd G0 =	m[0] * g * dTdq[0] * r[0] + \
+					m[1] * g * dTdq[0] * (inverseHomogeneousTransform(T01) * T02) * r[1] + \
+					m[2] * g * dTdq[0] * (inverseHomogeneousTransform(T01) * T03) * r[2] + \
+					m[3] * g * dTdq[0] * (inverseHomogeneousTransform(T01) * T04) * r[3] + \
+					m[4] * g * dTdq[0] * (inverseHomogeneousTransform(T01) * T05) * r[4] + \
+					m[5] * g * dTdq[0] * (inverseHomogeneousTransform(T01) * T06) * r[5];
+	G(0) = G0(0,0);
+	MatrixXd G1 =	m[1] * g * T01 * dTdq[1] * r[1] + \
+					m[2] * g * T01 * dTdq[1] * T23 * r[2] + \
+					m[3] * g * T01 * dTdq[1] * (inverseHomogeneousTransform(T02) * T04) * r[3] + \
+					m[4] * g * T01 * dTdq[1] * (inverseHomogeneousTransform(T02) * T05) * r[4] + \
+					m[5] * g * T01 * dTdq[1] * (inverseHomogeneousTransform(T02) * T06) * r[5];
+	G(1) = G1(0, 0);
+	MatrixXd G2 =	m[2] * g * T02 * dTdq[2] * r[2] + \
+					m[3] * g * T02 * dTdq[2] * (inverseHomogeneousTransform(T03) * T04) * r[3] + \
+					m[4] * g * T02 * dTdq[2] * (inverseHomogeneousTransform(T03) * T05) * r[4] + \
+					m[5] * g * T02 * dTdq[2] * (inverseHomogeneousTransform(T03) * T06) * r[5];
+	G(2) = G2(0, 0);
+	MatrixXd G3 =	m[3] * g * T03 * dTdq[3] * r[3] + \
+					m[4] * g * T03 * dTdq[3] * (inverseHomogeneousTransform(T04) * T05) * r[4] + \
+					m[5] * g * T03 * dTdq[3] * (inverseHomogeneousTransform(T04) * T06) * r[5];
+	G(3) = G3(0, 0);
+	MatrixXd G4 =	m[4] * g * T04 * dTdq[4] * r[4] + \
+					m[5] * g * T04 * dTdq[4] * T56 * r[5];
+	G(4) = G4(0,0);
+	MatrixXd G5 =	m[5] * g * T05 * dTdq[5] * r[5];//OK
+	G(5) = G5(0,0);
 	/*
 	G(1) = 37.9871 * (-0.00001 * cos(q2) - 0.19408 * sin(q2)) +
 		52.103 * (0.04121 * cos(q2) * cos(q3) -
