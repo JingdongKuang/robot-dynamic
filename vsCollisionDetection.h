@@ -78,10 +78,14 @@ public:
 				0,  0, 0, 0,
 				0,  0, 0, 0;
 	}
+	
 	// 成员函数声明
 	MatrixXd getMassMatrix(const VectorXd& q);//获取质量矩阵
 	VectorXd getTorque(const VectorXd& q, const VectorXd& q_dot, const VectorXd& q_dot_dot, const MatrixXd& M_past, const MatrixXd& M_now, const double& T);//获取关节力矩
-	VectorXd getGravity();//获取重力矩
+	VectorXd getGravity();	//获取重力矩
+	void getTransMatrix(const VectorXd &q);//获取齐次变换矩阵
+
+
 private:
 	/*变量声明*/
 	//质量
@@ -98,8 +102,20 @@ private:
 	VectorXd G;
 	//用于求导的矩阵，属于机器人的特性dTdq=Q*T
 	MatrixXd Q;
-	/*声明*/
+	//齐次变换矩阵
+	Matrix4d T01;
+	Matrix4d T12;
+	Matrix4d T23;
+	Matrix4d T34;
+	Matrix4d T45;
+	Matrix4d T56;
+	Matrix4d T02;
+	Matrix4d T03;
+	Matrix4d T04;
+	Matrix4d T05;
+	Matrix4d T06;
+	/*函数声明*/
 	Matrix4d inverseHomogeneousTransform(const Matrix4d& transform);
 	MatrixXd get_T_Derivative_of_time();//获取齐次变换矩阵对于时间的微分
-	MatrixXd get_T_Derivative_of_qi();//获取齐次变换矩阵对于qi的微分
+	MatrixXd get_T_Derivative_of_qi(int T0i, int qi);//获取齐次变换矩阵对于qi的微分
 };

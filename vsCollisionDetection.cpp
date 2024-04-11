@@ -194,7 +194,8 @@ Matrix4d RobotDynamics::inverseHomogeneousTransform(const Matrix4d& transform) {
 *	计算质量矩阵
 ***********************************************/
 MatrixXd RobotDynamics::getMassMatrix(const VectorXd& q) {
-	
+	getTransMatrix(q);
+	Vector4d temp;
 	double q1 = q(0);
 	double q2 = q(1);
 	double q3 = q(2);
@@ -203,217 +204,98 @@ MatrixXd RobotDynamics::getMassMatrix(const VectorXd& q) {
 	double q6 = q(5);
 
 	//计算线速度雅可比矩阵
-	MatrixXd Jv1(3, 6);
-	MatrixXd Jv2(3, 6);
-	MatrixXd Jv3(3, 6);
-	MatrixXd Jv4(3, 6);
-	MatrixXd Jv5(3, 6);
-	MatrixXd Jv6(3, 6);
-	
-	Jv6 << cos(q1) * (sin(q4) * (-0.12246 * sin(q5) + cos(q5) * (-0.00003 * cos(q6) + 0.00106 * sin(q6))) + cos(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6))) - sin(q1) * (sin(q2) * (-0.455 + sin(q3) * (-0.495 - 0.12246 * cos(q5) +
-		0.00003 * cos(q6) * sin(q5) - 0.00106 * sin(q5) * sin(q6)) + cos(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) + cos(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6)))) +
-		cos(q2) * (cos(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) + sin(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) + cos(q4) * (0.00003 * cos(q5) * cos(q6) +
-			0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6))))), cos(q1)* (cos(q2) * (-0.455 + sin(q3) * (-0.495 - 0.12246 * cos(q5) + 0.00003 * cos(q6) * sin(q5) - 0.00106 * sin(q5) * sin(q6)) +
-				cos(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) + cos(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6)))) - sin(q2) * (cos(q3) * (0.495 +
-					0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) + sin(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) + cos(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) -
-						0.00106 * cos(q5) * sin(q6))))), cos(q1)* (cos(q2) * (-sin(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) + cos(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) +
-							cos(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6)))) + sin(q2) * (cos(q3) * (-0.495 - 0.12246 * cos(q5) + 0.00003 * cos(q6) * sin(q5) - 0.00106 * sin(q5) * sin(q6)) -
-								sin(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) + cos(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6))))), sin(q1)* (cos(q4) * (-0.12246 * sin(q5) +
-									cos(q5) * (-0.00003 * cos(q6) + 0.00106 * sin(q6))) - sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6))) + cos(q1) * (cos(q3) * sin(q2) * (cos(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) -
-										sin(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6))) + cos(q2) * sin(q3) * (cos(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) - sin(q4) * (0.00003 * cos(q5) * cos(q6) +
-											0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6)))), sin(q1)* sin(q4)* (-0.12246 * cos(q5) - sin(q5) * (-0.00003 * cos(q6) + 0.00106 * sin(q6))) + cos(q1) * (sin(q2) * (sin(q3) * (0.00003 * cos(q5) * cos(q6) +
-												0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6)) + cos(q3) * cos(q4) * (0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6))) + cos(q2) * (cos(q3) * (-0.00003 * cos(q5) * cos(q6) -
-													0.12246 * sin(q5) + 0.00106 * cos(q5) * sin(q6)) + cos(q4) * sin(q3) * (0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)))), sin(q1)* (cos(q5) * sin(q4) * (0.00106 * cos(q6) +
-														0.00003 * sin(q6)) + cos(q4) * (-0.00003 * cos(q6) + 0.00106 * sin(q6))) + cos(q1) * (sin(q2) * (sin(q3) * (-0.00106 * cos(q6) * sin(q5) - 0.00003 * sin(q5) * sin(q6)) +
-															cos(q3) * (sin(q4) * (-0.00003 * cos(q6) + 0.00106 * sin(q6)) + cos(q4) * (-0.00106 * cos(q5) * cos(q6) - 0.00003 * cos(q5) * sin(q6)))) + cos(q2) * (cos(q3) * (0.00106 * cos(q6) * sin(q5) +
-																0.00003 * sin(q5) * sin(q6)) + sin(q3) * (sin(q4) * (-0.00003 * cos(q6) + 0.00106 * sin(q6)) + cos(q4) * (-0.00106 * cos(q5) * cos(q6) - 0.00003 * cos(q5) * sin(q6))))),
+	MatrixXd Jv[6];
+	MatrixXd Jw[6];
 
-		-sin(q1) * (sin(q4) * (0.12246 * sin(q5) + cos(q5) * (0.00003 * cos(q6) - 0.00106 * sin(q6))) + cos(q4) * (0.00106 * cos(q6) + 0.00003 * sin(q6))) + cos(q1) * (sin(q2) * (-0.455 + sin(q3) * (-0.495 - 0.12246 * cos(q5) + 0.00003 * cos(q6) * sin(q5) - 0.00106 * sin(q5) * sin(q6)) + cos(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) + cos(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6)))) + cos(q2) * (cos(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) + sin(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) + cos(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6))))),
-		sin(q1)* (cos(q2) * (-0.455 + sin(q3) * (-0.495 - 0.12246 * cos(q5) + 0.00003 * cos(q6) * sin(q5) - 0.00106 * sin(q5) * sin(q6)) + cos(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) + cos(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6)))) - sin(q2) * (cos(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) + sin(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) + cos(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6))))),
-		sin(q1)* (cos(q2) * (-sin(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) + cos(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) + cos(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6)))) + sin(q2) * (cos(q3) * (-0.495 - 0.12246 * cos(q5) + 0.00003 * cos(q6) * sin(q5) - 0.00106 * sin(q5) * sin(q6)) - sin(q3) * (sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) + cos(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6))))),
-		cos(q1)* (cos(q4) * (0.12246 * sin(q5) + cos(q5) * (0.00003 * cos(q6) - 0.00106 * sin(q6))) - sin(q4) * (0.00106 * cos(q6) + 0.00003 * sin(q6))) + sin(q1) * (cos(q3) * sin(q2) * (cos(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) - sin(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6))) + cos(q2) * sin(q3) * (cos(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6)) - sin(q4) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6)))),
-		cos(q1)* sin(q4)* (0.12246 * cos(q5) - sin(q5) * (0.00003 * cos(q6) - 0.00106 * sin(q6))) + sin(q1) * (sin(q2) * (sin(q3) * (0.00003 * cos(q5) * cos(q6) + 0.12246 * sin(q5) - 0.00106 * cos(q5) * sin(q6)) + cos(q3) * cos(q4) * (0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6))) + cos(q2) * (cos(q3) * (-0.00003 * cos(q5) * cos(q6) - 0.12246 * sin(q5) + 0.00106 * cos(q5) * sin(q6)) + cos(q4) * sin(q3) * (0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)))),
-		cos(q1)* (cos(q4) * (0.00003 * cos(q6) - 0.00106 * sin(q6)) + cos(q5) * sin(q4) * (-0.00106 * cos(q6) - 0.00003 * sin(q6))) + sin(q1) * (sin(q2) * (sin(q3) * (-0.00106 * cos(q6) * sin(q5) - 0.00003 * sin(q5) * sin(q6)) + cos(q3) * (sin(q4) * (-0.00003 * cos(q6) + 0.00106 * sin(q6)) + cos(q4) * (-0.00106 * cos(q5) * cos(q6) - 0.00003 * cos(q5) * sin(q6)))) + cos(q2) * (cos(q3) * (0.00106 * cos(q6) * sin(q5) + 0.00003 * sin(q5) * sin(q6)) + sin(q3) * (sin(q4) * (-0.00003 * cos(q6) + 0.00106 * sin(q6)) + cos(q4) * (-0.00106 * cos(q5) * cos(q6) - 0.00003 * cos(q5) * sin(q6))))),
+	// 创建12个全零矩阵
+	for (int i = 0; i < 6; i++) {
+		Jv[i] = MatrixXd::Zero(3, 6); // 初始化矩阵都是3x6的全零矩阵
+		Jw[i] = MatrixXd::Zero(3, 6);
+	}
+	MatrixXd JwTest(3,6);
 
+	//Jv6	
+	temp = Q * T06 * r[5];
+	Jv[5].block(0, 0, 3, 1) = temp.head(3);
+	temp = T01 * Q * T12 * T23 * T34 * T45 * T56* r[5];
+	Jv[5].block(0, 1, 3, 1) = temp.head(3);
+	temp = T02 * Q * T23 * T34 * T45 * T56 * r[5];
+	Jv[5].block(0, 2, 3, 1) = temp.head(3);
+	temp = T03 * Q * T34 * T45 * T56 * r[5];
+	Jv[5].block(0, 3, 3, 1) = temp.head(3);
+	temp = T04 * Q * T45 * T56 * r[5];
+	Jv[5].block(0, 4, 3, 1) = temp.head(3);
+	temp = T05 * Q * T56 * r[5];
+	Jv[5].block(0, 5, 3, 1) = temp.head(3);
+	//Jv5
+	temp = Q * T05 * r[4];
+	Jv[4].block(0, 0, 3, 1) = temp.head(3);
+	temp = T01 * Q * T12 * T23 * T34 *T45* r[4];
+	Jv[4].block(0, 1, 3, 1) = temp.head(3);
+	temp = T02 * Q * T23 * T34 * T45 * r[4];
+	Jv[4].block(0, 2, 3, 1) = temp.head(3);
+	temp = T03 * Q * T34 * T45 * r[4];
+	Jv[4].block(0, 3, 3, 1) = temp.head(3);
+	temp = T04 * Q * T45 * r[4];
+	Jv[4].block(0, 4, 3, 1) = temp.head(3);
+	//Jv4
+	temp = Q * T04 * r[3];
+	Jv[3].block(0, 0, 3, 1) = temp.head(3);
+	temp = T01 * Q * T12 * T23 * T34 * r[3];
+	Jv[3].block(0, 1, 3, 1) = temp.head(3);
+	temp = T02 * Q * T23 * T34 * r[3];
+	Jv[3].block(0, 2, 3, 1) = temp.head(3);
+	temp = T03 * Q * T34 * r[3];
+	Jv[3].block(0, 3, 3, 1) = temp.head(3);
+	//Jv3
+	temp = Q * T03 * r[2];
+	Jv[2].block(0, 0, 3, 1) = temp.head(3);
+	temp = T01 * Q * T12 * T23 * r[2];
+	Jv[2].block(0, 1, 3, 1) = temp.head(3);
+	temp = T02 * Q * T23 * r[2];
+	Jv[2].block(0, 2, 3, 1) = temp.head(3);
+	//Jv2
+	temp = Q * T02 * r[1];
+	Jv[1].block(0, 0, 3, 1) = temp.head(3);
+	temp = T01 * Q * T12 * r[1];
+;	Jv[1].block(0, 1, 3, 1) = temp.head(3);
+	//Jv1
+	temp= Q * T01 * r[0];
+	Jv[0].block(0, 0, 3, 1) = temp.head(3);
 
-		0,0.00003 * cos(q2) * cos(q4) * cos(q5) * cos(q6) * sin(q3) - 0.00106 * cos(q2) * cos(q6) * sin(q3) * sin(q4) + 0.12246 * cos(q2) * cos(q4) * sin(q3) * sin(q5) - 0.00106 * cos(q2) * cos(q4) * cos(q5) * sin(q3) * sin(q6) - 0.00003 * cos(q2) * sin(q3) * sin(q4) * sin(q6) + cos(q2) * cos(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) - sin(q2) * (0.455 + sin(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) + cos(q3) * (sin(q4) * (0.00106 * cos(q6) + 0.00003 * sin(q6)) + cos(q4) * (-0.00003 * cos(q5) * cos(q6) - 0.12246 * sin(q5) + 0.00106 * cos(q5) * sin(q6)))),
-		0.00003 * cos(q3) * cos(q4) * cos(q5) * cos(q6) * sin(q2) - 0.00106 * cos(q3) * cos(q6) * sin(q2) * sin(q4) + 0.12246 * cos(q3) * cos(q4) * sin(q2) * sin(q5) - 0.00106 * cos(q3) * cos(q4) * cos(q5) * sin(q2) * sin(q6) - 0.00003 * cos(q3) * sin(q2) * sin(q4) * sin(q6) - sin(q2) * sin(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) + cos(q2) * (cos(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) - sin(q3) * (sin(q4) * (0.00106 * cos(q6) + 0.00003 * sin(q6)) + cos(q4) * (-0.00003 * cos(q5) * cos(q6) - 0.12246 * sin(q5) + 0.00106 * cos(q5) * sin(q6)))),
-		-0.00106 * cos(q4) * cos(q6) * sin(q2) * sin(q3) - 0.00003 * cos(q5) * cos(q6) * sin(q2) * sin(q3) * sin(q4) - 0.12246 * sin(q2) * sin(q3) * sin(q4) * sin(q5) - 0.00003 * cos(q4) * sin(q2) * sin(q3) * sin(q6) + 0.00106 * cos(q5) * sin(q2) * sin(q3) * sin(q4) * sin(q6) + cos(q2) * cos(q3) * (cos(q4) * (0.00106 * cos(q6) + 0.00003 * sin(q6)) - sin(q4) * (-0.00003 * cos(q5) * cos(q6) - 0.12246 * sin(q5) + 0.00106 * cos(q5) * sin(q6))),
-		0.12246 * cos(q4) * cos(q5) * sin(q2) * sin(q3) - 0.00003 * cos(q4) * cos(q6) * sin(q2) * sin(q3) * sin(q5) + 0.00106 * cos(q4) * sin(q2) * sin(q3) * sin(q5) * sin(q6) + cos(q3) * sin(q2) * (-0.00003 * cos(q5) * cos(q6) - 0.12246 * sin(q5) + 0.00106 * cos(q5) * sin(q6)) + cos(q2) * (sin(q3) * (-0.00003 * cos(q5) * cos(q6) - 0.12246 * sin(q5) + 0.00106 * cos(q5) * sin(q6)) + cos(q3) * cos(q4) * (-0.12246 * cos(q5) + 0.00003 * cos(q6) * sin(q5) - 0.00106 * sin(q5) * sin(q6))),
-		-0.00106 * cos(q4) * cos(q5) * cos(q6) * sin(q2) * sin(q3) - 0.00003 * cos(q6) * sin(q2) * sin(q3) * sin(q4) - 0.00003 * cos(q4) * cos(q5) * sin(q2) * sin(q3) * sin(q6) + 0.00106 * sin(q2) * sin(q3) * sin(q4) * sin(q6) + cos(q3) * sin(q2) * (0.00106 * cos(q6) * sin(q5) + 0.00003 * sin(q5) * sin(q6)) + cos(q2) * (sin(q3) * (0.00106 * cos(q6) * sin(q5) + 0.00003 * sin(q5) * sin(q6)) + cos(q3) * (sin(q4) * (0.00003 * cos(q6) - 0.00106 * sin(q6)) + cos(q4) * (0.00106 * cos(q5) * cos(q6) + 0.00003 * cos(q5) * sin(q6))));
-
-
-		
-		
-
-
-
-	Jv5 << -sin(q1) * (cos(q2) * (sin(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + cos(q3) * (0.495 + 0.03659 * cos(q5) - 0.0002 * sin(q5))) + sin(q2) * (-0.455 + cos(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + sin(q3) * (-0.495 - 0.03659 * cos(q5) + 0.0002 * sin(q5)))) + cos(q1) * (-0.01507 * cos(q4) + sin(q4) * (-0.0002 * cos(q5) - 0.03659 * sin(q5))),
-		cos(q1)* (-sin(q2) * (sin(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + cos(q3) * (0.495 + 0.03659 * cos(q5) - 0.0002 * sin(q5))) + cos(q2) * (-0.455 + cos(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + sin(q3) * (-0.495 - 0.03659 * cos(q5) + 0.0002 * sin(q5)))),
-		cos(q1)* (cos(q2) * (cos(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) - sin(q3) * (0.495 + 0.03659 * cos(q5) - 0.0002 * sin(q5))) + sin(q2) * (-sin(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + cos(q3) * (-0.495 - 0.03659 * cos(q5) + 0.0002 * sin(q5)))),
-		cos(q1)* (cos(q3) * sin(q2) * (-0.01507 * cos(q4) - sin(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + cos(q2) * sin(q3) * (-0.01507 * cos(q4) - sin(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5)))) + sin(q1) * (0.01507 * sin(q4) + cos(q4) * (-0.0002 * cos(q5) - 0.03659 * sin(q5))),
-		cos(q1)* (cos(q2) * (cos(q3) * (-0.0002 * cos(q5) - 0.03659 * sin(q5)) + cos(q4) * sin(q3) * (0.03659 * cos(q5) - 0.0002 * sin(q5))) + sin(q2) * (cos(q3) * cos(q4) * (0.03659 * cos(q5) - 0.0002 * sin(q5)) + sin(q3) * (0.0002 * cos(q5) + 0.03659 * sin(q5)))) + sin(q1) * sin(q4) * (-0.03659 * cos(q5) + 0.0002 * sin(q5)), 0,
-
-		cos(q1)* (cos(q2) * (sin(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + cos(q3) * (0.495 + 0.03659 * cos(q5) - 0.0002 * sin(q5))) + sin(q2) * (-0.455 + cos(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + sin(q3) * (-0.495 - 0.03659 * cos(q5) + 0.0002 * sin(q5)))) - sin(q1) * (0.01507 * cos(q4) + sin(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))),
-		sin(q1)* (-sin(q2) * (sin(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + cos(q3) * (0.495 + 0.03659 * cos(q5) - 0.0002 * sin(q5))) + cos(q2) * (-0.455 + cos(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + sin(q3) * (-0.495 - 0.03659 * cos(q5) + 0.0002 * sin(q5)))),
-		sin(q1)* (cos(q2) * (cos(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) - sin(q3) * (0.495 + 0.03659 * cos(q5) - 0.0002 * sin(q5))) + sin(q2) * (-sin(q3) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + cos(q3) * (-0.495 - 0.03659 * cos(q5) + 0.0002 * sin(q5)))),
-		sin(q1)* (cos(q3) * sin(q2) * (-0.01507 * cos(q4) - sin(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))) + cos(q2) * sin(q3) * (-0.01507 * cos(q4) - sin(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5)))) + cos(q1) * (-0.01507 * sin(q4) + cos(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5))),
-		sin(q1)* (cos(q2) * (cos(q3) * (-0.0002 * cos(q5) - 0.03659 * sin(q5)) + cos(q4) * sin(q3) * (0.03659 * cos(q5) - 0.0002 * sin(q5))) + sin(q2) * (cos(q3) * cos(q4) * (0.03659 * cos(q5) - 0.0002 * sin(q5)) + sin(q3) * (0.0002 * cos(q5) + 0.03659 * sin(q5)))) + cos(q1) * sin(q4) * (0.03659 * cos(q5) - 0.0002 * sin(q5)), 0,0,
-
-		0.495 * cos(q2 + q3) + 0.03659 * cos(q2 + q3) * cos(q5) - 0.01507 * cos(q2) * sin(q3) * sin(q4) + cos(q2) * cos(q4) * sin(q3) * (0.0002 * cos(q5) + 0.03659 * sin(q5)) - 0.0002 * cos(q2 + q3) * sin(q5) - sin(q2) * (0.455 + cos(q3) * (-0.0002 * cos(q4) * cos(q5) + 0.01507 * sin(q4) - 0.03659 * cos(q4) * sin(q5))),
-		0.495 * cos(q2 + q3) + 0.03659 * cos(q2 + q3) * cos(q5) - 0.01507 * cos(q3) * sin(q2) * sin(q4) + cos(q3) * cos(q4) * sin(q2) * (0.0002 * cos(q5) + 0.03659 * sin(q5)) - 0.0002 * cos(q2 + q3) * sin(q5) - cos(q2) * sin(q3) * (-0.0002 * cos(q4) * cos(q5) + 0.01507 * sin(q4) - 0.03659 * cos(q4) * sin(q5)),
-		-0.01507 * cos(q4) * sin(q2) * sin(q3) - sin(q2) * sin(q3) * sin(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5)) + cos(q2) * cos(q3) * (0.01507 * cos(q4) + 0.0002 * cos(q5) * sin(q4) + 0.03659 * sin(q4) * sin(q5)),
-		-0.0002 * cos(q5) * sin(q2 + q3) + cos(q4) * sin(q2) * sin(q3) * (0.03659 * cos(q5) - 0.0002 * sin(q5)) - 0.03659 * sin(q2 + q3) * sin(q5) + cos(q2) * cos(q3) * (-0.03659 * cos(q4) * cos(q5) + 0.0002 * cos(q4) * sin(q5)),0;
-
-
-
-
-
-
-	
-	Jv4 <<		cos(q1) * (-0.03714 * cos(q4) + 0.00003 * sin(q4)) - 
-				sin(q1) * (sin(q2) * (-0.455 - 0.00003 * cos(q3) * cos(q4) - 0.27613 * sin(q3) - 
-				0.03714 * cos(q3) * sin(q4)) + 
-				cos(q2) * (0.27613 * cos(q3) - 0.00003 * cos(q4) * sin(q3) - 
-				0.03714 * sin(q3) * sin(q4))), 
-				cos(q1) * (cos(q2) * (-0.455 - 0.00003 * cos(q3) * cos(q4) - 0.27613 * sin(q3) - 
-				0.03714 * cos(q3) * sin(q4)) - 
-				sin(q2) * (0.27613 * cos(q3) - 0.00003 * cos(q4) * sin(q3) - 
-				0.03714 * sin(q3) * sin(q4))), 
-				cos(q1) * (cos(q2) * (-0.00003 * cos(q3) * cos(q4) - 0.27613 * sin(q3) - 
-				0.03714 * cos(q3) * sin(q4)) + 
-				sin(q2) * (-0.27613 * cos(q3) + 0.00003 * cos(q4) * sin(q3) + 
-				0.03714 * sin(q3) * sin(q4))), 
-				sin(q1) * (0.00003 * cos(q4) + 0.03714 * sin(q4)) + 
-				cos(q1) * (sin(q2) * (-0.03714 * cos(q3) * cos(q4) + 0.00003 * cos(q3) * sin(q4)) + 
-				cos(q2) * (-0.03714 * cos(q4) * sin(q3) + 0.00003 * sin(q3) * sin(q4))), 0, 0,
-
-				- sin(q1) * (0.03714 * cos(q4) - 0.00003 * sin(q4)) +
-				cos(q1) * (sin(q2) * (-0.455 - 0.00003 * cos(q3) * cos(q4) - 0.27613 * sin(q3) -
-				0.03714 * cos(q3) * sin(q4)) +
-				cos(q2) * (0.27613 * cos(q3) - 0.00003 * cos(q4) * sin(q3) -
-				0.03714 * sin(q3) * sin(q4))),
-				sin(q1) * (cos(q2) * (-0.455 - 0.00003 * cos(q3) * cos(q4) - 0.27613 * sin(q3) -
-				0.03714 * cos(q3) * sin(q4)) -
-				sin(q2) * (0.27613 * cos(q3) - 0.00003 * cos(q4) * sin(q3) -
-				0.03714 * sin(q3) * sin(q4))),
-				sin(q1) * (cos(q2) * (-0.00003 * cos(q3) * cos(q4) - 0.27613 * sin(q3) -
-				0.03714 * cos(q3) * sin(q4)) +
-				sin(q2) * (-0.27613 * cos(q3) + 0.00003 * cos(q4) * sin(q3) +
-				0.03714 * sin(q3) * sin(q4))),
-				cos(q1) * (-0.00003 * cos(q4) - 0.03714 * sin(q4)) +
-				sin(q1) * (sin(q2) * (-0.03714 * cos(q3) * cos(q4) + 0.00003 * cos(q3) * sin(q4)) +
-				cos(q2) * (-0.03714 * cos(q4) * sin(q3) + 0.00003 * sin(q3) * sin(q4))), 0, 0,
-
-				0, 0.27613 * cos(q2) * cos(q3) - 0.00003 * cos(q2) * cos(q4) * sin(q3) -
-				sin(q2) * (0.455 + 0.27613 * sin(q3) +
-				cos(q3) * (0.00003 * cos(q4) + 0.03714 * sin(q4))) -
-				0.03714 * cos(q2) * sin(q3) * sin(q4), -0.00003 * cos(q3) * cos(q4) * sin(q2) -
-				0.27613 * sin(q2) * sin(q3) +
-				cos(q2) * (0.27613 * cos(q3) -
-				sin(q3) * (0.00003 * cos(q4) + 0.03714 * sin(q4))) -
-				0.03714 * cos(q3) * sin(q2) * sin(q4), -0.03714 * cos(q4) * sin(q2) * sin(q3) +
-				cos(q2) * cos(q3) * (0.03714 * cos(q4) - 0.00003 * sin(q4)) +
-				0.00003 * sin(q2) * sin(q3) * sin(q4), 0, 0;
-
-
-
-
-	Jv3 <<	-0.0181 * cos(q1) - 
-				sin(q1) * (sin(q2) * (-0.455 - 0.00008 * cos(q3) - 0.04121 * sin(q3)) + 
-				cos(q2) * (0.04121 * cos(q3) - 0.00008 * sin(q3))), 
-				cos(q1) * (cos(q2) * (-0.455 - 0.00008 * cos(q3) - 0.04121 * sin(q3)) - 
-				sin(q2) * (0.04121 * cos(q3) - 0.00008 * sin(q3))), 
-				cos(q1) * (cos(q2) * (-0.00008 * cos(q3) - 0.04121 * sin(q3)) + 
-				sin(q2) * (-0.04121 * cos(q3) + 0.00008 * sin(q3))), 0, 0, 0,
-
-				-0.0181 * sin(q1) +
-				cos(q1) * (sin(q2) * (-0.455 - 0.00008 * cos(q3) - 0.04121 * sin(q3)) +
-				cos(q2) * (0.04121 * cos(q3) - 0.00008 * sin(q3))),
-				sin(q1) * (cos(q2) * (-0.455 - 0.00008 * cos(q3) - 0.04121 * sin(q3)) -
-				sin(q2) * (0.04121 * cos(q3) - 0.00008 * sin(q3))),
-				sin(q1) * (cos(q2) * (-0.00008 * cos(q3) - 0.04121 * sin(q3)) +
-				sin(q2) * (-0.04121 * cos(q3) + 0.00008 * sin(q3))), 0, 0, 0,
-
-				0, 0.04121 * cos(q2) * cos(q3) -
-				sin(q2) * (0.455 + 0.00008 * cos(q3) + 0.04121 * sin(q3)) -
-				0.00008 * cos(q2) * sin(q3), -0.00008 * cos(q3) * sin(q2) +
-				cos(q2) * (0.04121 * cos(q3) - 0.00008 * sin(q3)) -
-				0.04121 * sin(q2) * sin(q3), 0, 0, 0;
-
-
-;
-
-
-
-	Jv2 <<	-0.11248 * cos(q1) - sin(q1) * (-0.00001 * cos(q2) - 0.19408 * sin(q2)), 
-				cos(q1) * (-0.19408 * cos(q2) + 0.00001 * sin(q2)), 0, 0, 0, 0,
-				
-				-0.11248 * sin(q1) + cos(q1) * (-0.00001 * cos(q2) - 0.19408 * sin(q2)), 
-				sin(q1) * (-0.19408 * cos(q2) + 0.00001 * sin(q2)), 0, 0, 0, 0,
-
-				0, -0.00001 * cos(q2) - 0.19408 * sin(q2), 0, 0, 0, 0;
-
-;
-	Jv1 << -0.02043 * cos(q1) - 0.00002 * sin(q1), 0, 0, 0, 0, 0, 0.00002 * cos(q1) - 0.02043 * sin(q1), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
-
-	
 
 
 
 
 	//计算角速度雅可比矩阵
-	MatrixXd Jw6(3, 6);
-	MatrixXd Jw5(3, 6);
-	MatrixXd Jw4(3, 6);
-	MatrixXd Jw3(3, 6);
-	MatrixXd Jw2(3, 6);
-	MatrixXd Jw1(3, 6);
-	Jw6 <<		0, sin(q1), sin(q1), cos(q1) * cos(q2) * cos(q3) - cos(q1) * sin(q2) * sin(q3), -cos(q4) * sin(q1) + (-cos(q1) * cos(q3) * sin(q2) - 
-				cos(q1) * cos(q2) * sin(q3)) * sin(q4), cos(q5) * (cos(q1) * cos(q2) * cos(q3) - cos(q1) * sin(q2) *sin(q3)) - (cos(q4) * (-cos(q1) * cos(q3) * sin(q2) - cos(q1) * cos(q2) * sin(q3)) + sin(q1) * sin(q4)) * sin(q5),
-				0, -cos(q1), -cos(q1), cos(q2) * cos(q3) * sin(q1) - sin(q1) * sin(q2) * sin(q3), cos(q1) * cos(q4) + (-cos(q3) * sin(q1) * sin(q2) - cos(q2) * sin(q1) * sin(q3)) * sin(q4), cos(q5) * (cos(q2) * cos(q3) * sin(q1) - sin(q1) * sin(q2) * sin(q3)) - (cos(q4) * (-cos(q3) * sin(q1) * sin(q2) - cos(q2) * sin(q1) * sin(q3)) - cos(q1) * sin(q4)) * sin(q5),
-				1, 0, 0, cos(q3) * sin(q2) + cos(q2) * sin(q3), (cos(q2) * cos(q3) - sin(q2) * sin(q3)) * sin(q4), cos(q5) * (cos(q3) * sin(q2) + cos(q2) * sin(q3)) - cos(q4) * (cos(q2) * cos(q3) - sin(q2) * sin(q3)) * sin(q5);
+	//Jw1
+	Jw[0](2, 0) = 1;
+	//Jw2
+	Jw[1] = Jw[0];
+	Jw[1].block(0, 1, 3, 1) = T01.block(0, 2, 3, 1);
+	//Jw3
+	Jw[2] = Jw[1];
+	Jw[2].block(0, 2, 3, 1) = T02.block(0, 2, 3, 1);
+	//Jw4
+	Jw[3] = Jw[2];
+	Jw[3].block(0, 3, 3, 1) = T03.block(0, 2, 3, 1);
+	//Jw5
+	Jw[4] = Jw[3];
+	Jw[4].block(0, 4, 3, 1) = T04.block(0, 2, 3, 1);
+	//Jw6
+	Jw[5] = Jw[4];
+	Jw[5].block(0, 5, 3, 1) = T05.block(0, 2, 3, 1);
+	
 
-	// 下面的Jw[0]~Jw[4]只需要将Jw[5]一列一列的替换成0即可
-	Jw5 <<		0, sin(q1), sin(q1), cos(q1)* cos(q2)* cos(q3) - cos(q1) * sin(q2) * sin(q3), -cos(q4) * sin(q1) + (-cos(q1) * cos(q3) * sin(q2) - cos(q1) * cos(q2) * sin(q3)) * sin(q4),0,
-
-				0, -cos(q1), -cos(q1), cos(q2)* cos(q3)* sin(q1) - sin(q1) * sin(q2) * sin(q3), cos(q1)* cos(q4) + (-cos(q3) * sin(q1) * sin(q2) - cos(q2) * sin(q1) * sin(q3)) * sin(q4), 0,
-
-				1, 0, 0, cos(q3)* sin(q2) + cos(q2) * sin(q3), (cos(q2) * cos(q3) - sin(q2) * sin(q3))* sin(q4),0;
-
-
-	Jw4 <<		0, sin(q1), sin(q1), cos(q1)* cos(q2)* cos(q3) - cos(q1) * sin(q2) * sin(q3), 0, 0,
-
-				0, -cos(q1), -cos(q1), cos(q2)* cos(q3)* sin(q1) - sin(q1) * sin(q2) * sin(q3), 0, 0,
-
-				1, 0, 0, cos(q3)* sin(q2) + cos(q2) * sin(q3), 0, 0;
-
-
-	Jw3 <<		0, sin(q1), sin(q1), 0, 0, 0,
-
-				0, -cos(q1), -cos(q1), 0, 0, 0,
-
-				1, 0, 0, 0, 0, 0;
-	Jw2 <<		0, sin(q1), 0, 0, 0, 0,
-
-				0, -cos(q1), 0, 0, 0, 0,
-
-				1, 0, 0, 0, 0, 0;
-
-	Jw1 <<		0, 0, 0, 0, 0, 0,
-
-				0, 0, 0, 0, 0, 0,
-
-				1, 0, 0, 0, 0, 0;
 
 	//质量矩阵
 	MatrixXd MassMatrix(6,6);
-	MassMatrix=Jv1.transpose()*m[0]*Jv1+Jw1.transpose()*I[0]*Jw1+
-			   Jv2.transpose()*m[1]*Jv2+Jw2.transpose()*I[1]*Jw2+
-			   Jv3.transpose()*m[2]*Jv3+Jw3.transpose()*I[2]*Jw3+
-			   Jv4.transpose()*m[3]*Jv4+Jw4.transpose()*I[3]*Jw4+
-			   Jv5.transpose()*m[4]*Jv5+Jw5.transpose()*I[4]*Jw5+
-			   Jv6.transpose()*m[5]*Jv6+Jw6.transpose()*I[5]*Jw6;
+	MassMatrix=Jv[0].transpose() * m[0] * Jv[0] + Jw[0].transpose() * I[0] * Jw[0] +
+			   Jv[1].transpose() * m[1] * Jv[1] + Jw[1].transpose() * I[1] * Jw[1] +
+			   Jv[2].transpose() * m[2] * Jv[2] + Jw[2].transpose() * I[2] * Jw[2] +
+			   Jv[3].transpose() * m[3] * Jv[3] + Jw[3].transpose() * I[3] * Jw[3] +
+			   Jv[4].transpose() * m[4] * Jv[4] + Jw[4].transpose() * I[4] * Jw[4] +
+			   Jv[5].transpose() * m[5] * Jv[5] + Jw[5].transpose() * I[5] * Jw[5];
 	return MassMatrix;
 }
 
@@ -435,31 +317,6 @@ MatrixXd RobotDynamics::getMassMatrix(const VectorXd& q) {
 *	基于拉格朗日方程的动力学模型，用于计算关节力矩
 ***********************************************/
 VectorXd RobotDynamics::getTorque(const VectorXd& q,const VectorXd& q_dot, const VectorXd& q_dot_dot,const MatrixXd& M_past, const MatrixXd& M_now,const double& T) {
-	double q1 = q(0);
-	double q2 = q(1);
-	double q3 = q(2);
-	double q4 = q(3);
-	double q5 = q(4);
-	double q6 = q(5);
-	Matrix4d T01 = DH2Trans(DH_Table(0, 0) + q1, DH_Table(0, 1), DH_Table(0, 2), DH_Table(0, 3));
-	Matrix4d T12 = DH2Trans(DH_Table(1, 0) + q2, DH_Table(1, 1), DH_Table(1, 2), DH_Table(1, 3));
-	Matrix4d T23 = DH2Trans(DH_Table(2, 0) + q3, DH_Table(2, 1), DH_Table(2, 2), DH_Table(2, 3));
-	Matrix4d T34 = DH2Trans(DH_Table(3, 0) + q4, DH_Table(3, 1), DH_Table(3, 2), DH_Table(3, 3));
-	Matrix4d T45 = DH2Trans(DH_Table(4, 0) + q5, DH_Table(4, 1), DH_Table(4, 2), DH_Table(4, 3));
-	Matrix4d T56 = DH2Trans(DH_Table(5, 0) + q6, DH_Table(5, 1), DH_Table(5, 2), DH_Table(5, 3));
-	Matrix4d T02 = T01 * T12;
-	Matrix4d T03 = T02 * T23;
-	Matrix4d T04 = T03 * T34;
-	Matrix4d T05 = T04 * T45;
-	Matrix4d T06 = T05 * T56;
-	//此处获得T01~T56各个齐次矩阵的导数，用于后续计算
-	Matrix4d dTdq[6];
-	dTdq[0] << -sin(q1), 0, cos(q1), 0, cos(q1), 0, sin(q1), 0, 0, 0, 0, 0, 0, 0, 0, 0;
-	dTdq[1] << -cos(q2), sin(q2), 0, DH_Table(1, 2)* cos(q2), -sin(q2), -cos(q2), 0, DH_Table(1, 2)* sin(q2), 0, 0, 0, 0, 0, 0, 0, 0;
-	dTdq[2] << -sin(q3), 0, cos(q3), 0, cos(q3), 0, sin(q3), 0, 0, 0, 0, 0, 0, 0, 0, 0;
-	dTdq[2] << -sin(q4), 0, cos(q4), 0, cos(q4), 0, sin(q4), 0, 0, 0, 0, 0, 0, 0, 0, 0;
-	dTdq[4] << -sin(q5), 0, -cos(q5), 0, cos(q5), 0, -sin(q5), 0, 0, 0, 0, 0, 0, 0, 0, 0;
-	dTdq[5] << -sin(q6), -cos(q6), 0, 0, cos(q6), -sin(q6), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
 	//计算拉格朗日方程中对q求偏导的项，通过数值方法求得
 	double delta = 0.000000001;//数值微分的步长
 	//每个分量的小变化
@@ -489,92 +346,36 @@ VectorXd RobotDynamics::getTorque(const VectorXd& q,const VectorXd& q_dot, const
 
 
 	
-
+	getTransMatrix(q);
 	//计算重力矩
-	MatrixXd G0 =	m[0] * g * dTdq[0] * r[0] + \
-					m[1] * g * dTdq[0] * (inverseHomogeneousTransform(T01) * T02) * r[1] + \
-					m[2] * g * dTdq[0] * (inverseHomogeneousTransform(T01) * T03) * r[2] + \
-					m[3] * g * dTdq[0] * (inverseHomogeneousTransform(T01) * T04) * r[3] + \
-					m[4] * g * dTdq[0] * (inverseHomogeneousTransform(T01) * T05) * r[4] + \
-					m[5] * g * dTdq[0] * (inverseHomogeneousTransform(T01) * T06) * r[5];
+	MatrixXd G0 =	m[0] * g * Q * T01 * r[0] + \
+					m[1] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T02) * r[1] + \
+					m[2] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T03) * r[2] + \
+					m[3] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T04) * r[3] + \
+					m[4] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T05) * r[4] + \
+					m[5] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T06) * r[5];
 	G(0) = G0(0,0);
-	MatrixXd G1 =	m[1] * g * T01 * dTdq[1] * r[1] + \
-					m[2] * g * T01 * dTdq[1] * T23 * r[2] + \
-					m[3] * g * T01 * dTdq[1] * (inverseHomogeneousTransform(T02) * T04) * r[3] + \
-					m[4] * g * T01 * dTdq[1] * (inverseHomogeneousTransform(T02) * T05) * r[4] + \
-					m[5] * g * T01 * dTdq[1] * (inverseHomogeneousTransform(T02) * T06) * r[5];
+	MatrixXd G1 =	m[1] * g * T01 * Q * T12 * r[1] + \
+					m[2] * g * T01 * Q * T12 * T23 * r[2] + \
+					m[3] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T04) * r[3] + \
+					m[4] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T05) * r[4] + \
+					m[5] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T06) * r[5];
 	G(1) = G1(0, 0);
-	MatrixXd G2 =	m[2] * g * T02 * dTdq[2] * r[2] + \
-					m[3] * g * T02 * dTdq[2] * (inverseHomogeneousTransform(T03) * T04) * r[3] + \
-					m[4] * g * T02 * dTdq[2] * (inverseHomogeneousTransform(T03) * T05) * r[4] + \
-					m[5] * g * T02 * dTdq[2] * (inverseHomogeneousTransform(T03) * T06) * r[5];
+	MatrixXd G2 =	m[2] * g * T02 * Q * T23 * r[2] + \
+					m[3] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T04) * r[3] + \
+					m[4] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T05) * r[4] + \
+					m[5] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T06) * r[5];
 	G(2) = G2(0, 0);
-	MatrixXd G3 =	m[3] * g * T03 * dTdq[3] * r[3] + \
-					m[4] * g * T03 * dTdq[3] * (inverseHomogeneousTransform(T04) * T05) * r[4] + \
-					m[5] * g * T03 * dTdq[3] * (inverseHomogeneousTransform(T04) * T06) * r[5];
+	MatrixXd G3 =	m[3] * g * T03 * Q * T34 * r[3] + \
+					m[4] * g * T03 * Q * T34 * (inverseHomogeneousTransform(T04) * T05) * r[4] + \
+					m[5] * g * T03 * Q * T34 * (inverseHomogeneousTransform(T04) * T06) * r[5];
 	G(3) = G3(0, 0);
-	MatrixXd G4 =	m[4] * g * T04 * dTdq[4] * r[4] + \
-					m[5] * g * T04 * dTdq[4] * T56 * r[5];
+	MatrixXd G4 =	m[4] * g * T04 * Q * T45 * r[4] + \
+					m[5] * g * T04 * Q * T45 * T56 * r[5];
 	G(4) = G4(0,0);
-	MatrixXd G5 =	m[5] * g * T05 * dTdq[5] * r[5];
+	MatrixXd G5 =	m[5] * g * T05 * Q * T56 * r[5];
 	G(5) = G5(0,0);
-	/*
-	G(1) = 37.9871 * (-0.00001 * cos(q2) - 0.19408 * sin(q2)) +
-		52.103 * (0.04121 * cos(q2) * cos(q3) -
-			sin(q2) * (0.455 + 0.00008 * cos(q3) + 0.04121 * sin(q3)) -
-			0.00008 * cos(q2) * sin(q3)) +
-		25.2962 * (0.27613 * cos(q2) * cos(q3) - 0.00003 * cos(q2) * cos(q4) * sin(q3) -
-			sin(q2) * (0.455 + 0.27613 * sin(q3) +
-				cos(q3) * (0.00003 * cos(q4) + 0.03714 * sin(q4))) -
-			0.03714 * cos(q2) * sin(q3) * sin(q4)) +
-		26.0881 * (0.495 * cos(q2 + q3) + 0.03659 * cos(q2 + q3) * cos(q5) -
-			0.01507 * cos(q2) * sin(q3) * sin(q4) +
-			cos(q2) * cos(q4) * sin(q3) * (0.0002 * cos(q5) + 0.03659 * sin(q5)) -
-			0.0002 * cos(q2 + q3) * sin(q5) -
-			sin(q2) * (0.455 +
-				cos(q3) * (-0.0002 * cos(q4) * cos(q5) + 0.01507 * sin(q4) -
-					0.03659 * cos(q4) * sin(q5)))) +
-		5.92185 * (0.00003 * cos(q2) * cos(q4) * cos(q5) * cos(q6) * sin(q3) -
-			0.00106 * cos(q2) * cos(q6) * sin(q3) * sin(q4) +
-			0.12246 * cos(q2) * cos(q4) * sin(q3) * sin(q5) -
-			0.00106 * cos(q2) * cos(q4) * cos(q5) * sin(q3) * sin(q6) -
-			0.00003 * cos(q2) * sin(q3) * sin(q4) * sin(q6) +
-			cos(q2) * cos(
-				q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) +
-					0.00106 * sin(q5) * sin(q6)) -
-			sin(q2) * (0.455 +
-				sin(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) +
-					0.00106 * sin(q5) * sin(q6)) +
-				cos(q3) * (sin(q4) * (0.00106 * cos(q6) + 0.00003 * sin(q6)) +
-					cos(q4) * (-0.00003 * cos(q5) * cos(q6) - 0.12246 * sin(q5) +
-						0.00106 * cos(q5) * sin(q6)))));
-
-
-
-
-
-	G(2) = 52.103 * (-0.00008 * cos(q3) * sin(q2) + cos(q2) * (0.04121 * cos(q3) - 0.00008 * sin(q3)) - 0.04121 * sin(q2) * sin(q3)) + 25.2962 * (-0.00003 * cos(q3) * cos(q4) * sin(q2) - 0.27613 * sin(q2) * sin(q3) + cos(q2) * (0.27613 * cos(q3) - sin(q3) * (0.00003 * cos(q4) + 0.03714 * sin(q4))) - 0.03714 * cos(q3) * sin(q2) * sin(q4)) + 26.0881 * (0.495 * cos(q2 + q3) + 0.03659 * cos(q2 + q3) * cos(q5) - 0.01507 * cos(q3) * sin(q2) * sin(q4) + cos(q3) * cos(q4) * sin(q2) * (0.0002 * cos(q5) + 0.03659 * sin(q5)) - 0.0002 * cos(q2 + q3) * sin(q5) - cos(q2) * sin(q3) * (-0.0002 * cos(q4) * cos(q5) + 0.01507 * sin(q4) - 0.03659 * cos(q4) * sin(q5))) + 5.92185 * (0.00003 * cos(q3) * cos(q4) * cos(q5) * cos(q6) * sin(q2) - 0.00106 * cos(q3) * cos(q6) * sin(q2) * sin(q4) + 0.12246 * cos(q3) * cos(q4) * sin(q2) * sin(q5) - 0.00106 * cos(q3) * cos(q4) * cos(q5) * sin(q2) * sin(q6) - 0.00003 * cos(q3) * sin(q2) * sin(q4) * sin(q6) - sin(q2) * sin(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) + cos(q2) * (cos(q3) * (0.495 + 0.12246 * cos(q5) - 0.00003 * cos(q6) * sin(q5) + 0.00106 * sin(q5) * sin(q6)) - sin(q3) * (sin(q4) * (0.00106 * cos(q6) + 0.00003 * sin(q6)) + cos(q4) * (-0.00003 * cos(q5) * cos(q6) - 0.12246 * sin(q5) + 0.00106 * cos(q5) * sin(q6)))));
-
-
-
-	G(3) = 25.2962 * (-0.03714 * cos(q4) * sin(q2) * sin(q3) + cos(q2) * cos(q3) * (0.03714 * cos(q4) - 0.00003 * sin(q4)) + 0.00003 * sin(q2) * sin(q3) * sin(q4)) + 26.0881 * (-0.01507 * cos(q4) * sin(q2) * sin(q3) - sin(q2) * sin(q3) * sin(q4) * (0.0002 * cos(q5) + 0.03659 * sin(q5)) + cos(q2) * cos(q3) * (0.01507 * cos(q4) + 0.0002 * cos(q5) * sin(q4) + 0.03659 * sin(q4) * sin(q5))) + 5.92185 * (-0.00106 * cos(q4) * cos(q6) * sin(q2) * sin(q3) - 0.00003 * cos(q5) * cos(q6) * sin(q2) * sin(q3) * sin(q4) - 0.12246 * sin(q2) * sin(q3) * sin(q4) * sin(q5) - 0.00003 * cos(q4) * sin(q2) * sin(q3) * sin(q6) + 0.00106 * cos(q5) * sin(q2) * sin(q3) * sin(q4) * sin(q6) + cos(q2) * cos(q3) * (cos(q4) * (0.00106 * cos(q6) + 0.00003 * sin(q6)) - sin(q4) * (-0.00003 * cos(q5) * cos(q6) - 0.12246 * sin(q5) + 0.00106 * cos(q5) * sin(q6))));
-
-
-
-	G(4) = 26.0881 * (-0.0002 * cos(q5) * sin(q2 + q3) + cos(q4) * sin(q2) * sin(q3) * (0.03659 * cos(q5) - 0.0002 * sin(q5)) - 0.03659 * sin(q2 + q3) * sin(q5) + cos(q2) * cos(q3) * (-0.03659 * cos(q4) * cos(q5) + 0.0002 * cos(q4) * sin(q5))) + 5.92185 * (0.12246 * cos(q4) * cos(q5) * sin(q2) * sin(q3) - 0.00003 * cos(q4) * cos(q6) * sin(q2) * sin(q3) * sin(q5) + 0.00106 * cos(q4) * sin(q2) * sin(q3) * sin(q5) * sin(q6) + cos(q3) * sin(q2) * (-0.00003 * cos(q5) * cos(q6) - 0.12246 * sin(q5) + 0.00106 * cos(q5) * sin(q6)) + cos(q2) * (sin(q3) * (-0.00003 * cos(q5) * cos(q6) - 0.12246 * sin(q5) + 0.00106 * cos(q5) * sin(q6)) + cos(q3) * cos(q4) * (-0.12246 * cos(q5) + 0.00003 * cos(q6) * sin(q5) - 0.00106 * sin(q5) * sin(q6))));
-
-
-
-	G(5) = 5.92185 *(-0.00106 *cos(q4) *cos(q5) *cos(q6) *sin(q2) *sin(q3) -
-		0.00003 *cos(q6)* sin(q2) *sin(q3) *sin(q4) -
-		0.00003 *cos(q4) *cos(q5)* sin(q2)* sin(q3)* sin(q6) +
-		0.00106* sin(q2)* sin(q3)* sin(q4)* sin(q6) +
-		cos(q3) *sin(q2)*(0.00106* cos(q6)* sin(q5) + 0.00003* sin(q5)* sin(q6)) +
-				cos(q2)*(sin(q3)*(0.00106 *cos(q6) *sin(q5) + 0.00003* sin(q5)* sin(q6)) +
-						cos(q3)*(sin(q4)*(0.00003 *cos(q6) - 0.00106* sin(q6)) +
-							cos(q4)*(0.00106 *cos(q5) *cos(q6) +
-								0.00003 *cos(q5)* sin(q6)))));
-*/
+	
 
 
 
@@ -596,7 +397,8 @@ MatrixXd RobotDynamics::get_T_Derivative_of_time() {
 	return dTdq;
 }
 //获取齐次变换矩阵对于某个关节角度的微分
-MatrixXd RobotDynamics::get_T_Derivative_of_qi() {
+
+MatrixXd RobotDynamics::get_T_Derivative_of_qi(int T0i,int qi) {
 	MatrixXd dTdq(6, 1);
 	
 	return dTdq;
@@ -604,6 +406,21 @@ MatrixXd RobotDynamics::get_T_Derivative_of_qi() {
 
 VectorXd RobotDynamics::getGravity() {
 	return G;
+}
+
+void RobotDynamics::getTransMatrix(const VectorXd &q) {
+
+	T01 = DH2Trans(DH_Table(0, 0) + q(0), DH_Table(0, 1), DH_Table(0, 2), DH_Table(0, 3));
+	T12 = DH2Trans(DH_Table(1, 0) + q(1), DH_Table(1, 1), DH_Table(1, 2), DH_Table(1, 3));
+	T23 = DH2Trans(DH_Table(2, 0) + q(2), DH_Table(2, 1), DH_Table(2, 2), DH_Table(2, 3));
+	T34 = DH2Trans(DH_Table(3, 0) + q(3), DH_Table(3, 1), DH_Table(3, 2), DH_Table(3, 3));
+	T45 = DH2Trans(DH_Table(4, 0) + q(4), DH_Table(4, 1), DH_Table(4, 2), DH_Table(4, 3));
+	T56 = DH2Trans(DH_Table(5, 0) + q(5), DH_Table(5, 1), DH_Table(5, 2), DH_Table(5, 3));
+	T02 = T01 * T12;
+	T03 = T02 * T23;
+	T04 = T03 * T34;
+	T05 = T04 * T45;
+	T06 = T05 * T56;
 }
 
 
@@ -616,7 +433,7 @@ int main()
 	MatrixXd M_past(6, 6);
 	MatrixXd M_now(6, 6);
 	VectorXd q_now(6);
-	q_now << 0.004, 0.004, 0.004, 0.004, 0.004, 0.004;
+	q_now << 0.05, 0.03, 0.001, 0.24, 0.114, 0.326;
 
 	VectorXd q_past(6);
 	q_past << 0, 0, 0, 0, 0, 0;
@@ -634,7 +451,7 @@ int main()
 	VectorXd torque(6);
 	torque = RD.getTorque(q_now, v, a, M_past, M_now, 0.004);
 	VectorXd G = RD.getGravity();
-	cout << "torque: " << endl << G << endl;
+	cout << "G: " << endl << G << endl;
 
 	return 0;
 }
