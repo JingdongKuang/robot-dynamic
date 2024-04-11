@@ -451,7 +451,7 @@ int main()
 	VectorXd torque(6);
 	torque = RD.getTorque(q_now, v, a, M_past, M_now, 0.004);
 	VectorXd G = RD.getGravity();
-	cout << "G: " << endl << G << endl;
+	cout << "Ga: " << endl << G << endl;
 
 	return 0;
 }
