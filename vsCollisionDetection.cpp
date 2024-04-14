@@ -258,9 +258,9 @@ MatrixXd RobotDynamics::getMassMatrix(const VectorXd& q) {
 	temp = Q * T02 * r[1];
 	Jv[1].block(0, 0, 3, 1) = temp.head(3);
 	temp = T01 * Q * T12 * r[1];
-;	Jv[1].block(0, 1, 3, 1) = temp.head(3);
+	;	Jv[1].block(0, 1, 3, 1) = temp.head(3);
 	//Jv1
-	temp= Q * T01 * r[0];
+	temp = Q * T01 * r[0];
 	Jv[0].block(0, 0, 3, 1) = temp.head(3);
 
 
@@ -285,17 +285,17 @@ MatrixXd RobotDynamics::getMassMatrix(const VectorXd& q) {
 	//Jw6
 	Jw[5] = Jw[4];
 	Jw[5].block(0, 5, 3, 1) = T05.block(0, 2, 3, 1);
-	
+
 
 
 	//质量矩阵
-	MatrixXd MassMatrix(6,6);
-	MassMatrix=Jv[0].transpose() * m[0] * Jv[0] + Jw[0].transpose() * I[0] * Jw[0] +
-			   Jv[1].transpose() * m[1] * Jv[1] + Jw[1].transpose() * I[1] * Jw[1] +
-			   Jv[2].transpose() * m[2] * Jv[2] + Jw[2].transpose() * I[2] * Jw[2] +
-			   Jv[3].transpose() * m[3] * Jv[3] + Jw[3].transpose() * I[3] * Jw[3] +
-			   Jv[4].transpose() * m[4] * Jv[4] + Jw[4].transpose() * I[4] * Jw[4] +
-			   Jv[5].transpose() * m[5] * Jv[5] + Jw[5].transpose() * I[5] * Jw[5];
+	MatrixXd MassMatrix(6, 6);
+	MassMatrix =	Jv[0].transpose() * m[0] * Jv[0] + Jw[0].transpose() * I[0] * Jw[0] +
+					Jv[1].transpose() * m[1] * Jv[1] + Jw[1].transpose() * I[1] * Jw[1] +
+					Jv[2].transpose() * m[2] * Jv[2] + Jw[2].transpose() * I[2] * Jw[2] +
+					Jv[3].transpose() * m[3] * Jv[3] + Jw[3].transpose() * I[3] * Jw[3] +
+					Jv[4].transpose() * m[4] * Jv[4] + Jw[4].transpose() * I[4] * Jw[4] +
+					Jv[5].transpose() * m[5] * Jv[5] + Jw[5].transpose() * I[5] * Jw[5];
 	return MassMatrix;
 }
 
@@ -316,35 +316,46 @@ MatrixXd RobotDynamics::getMassMatrix(const VectorXd& q) {
 * DESCRIPTION:
 *	基于拉格朗日方程的动力学模型，用于计算关节力矩
 ***********************************************/
-VectorXd RobotDynamics::getTorque(const VectorXd& q,const VectorXd& q_dot, const VectorXd& q_dot_dot,const MatrixXd& M_past, const MatrixXd& M_now,const double& T) {
+VectorXd RobotDynamics::getTorque(const VectorXd& q, const VectorXd& q_dot, const VectorXd& q_dot_dot, const MatrixXd& M_now) {
 	//计算拉格朗日方程中对q求偏导的项，通过数值方法求得
 	double delta = 0.000000001;//数值微分的步长
 	//每个分量的小变化
 	MatrixXd q_ = MatrixXd::Identity(6, 6);
 	//计算每个分量的小变化对应的质量矩阵
-	MatrixXd dMdq0(6, 6);
-	MatrixXd dMdq1(6, 6);
-	MatrixXd dMdq2(6, 6);
-	MatrixXd dMdq3(6, 6);
-	MatrixXd dMdq4(6, 6);
-	MatrixXd dMdq5(6, 6);
-	dMdq0 = getMassMatrix(q + delta * q_.col(0));
-	dMdq1 = getMassMatrix(q + delta * q_.col(1));
-	dMdq2 = getMassMatrix(q + delta * q_.col(2));
-	dMdq3 = getMassMatrix(q + delta * q_.col(3));
-	dMdq4 = getMassMatrix(q + delta * q_.col(4));
-	dMdq5 = getMassMatrix(q + delta * q_.col(5));
-	
+	MatrixXd dMdq[6];
+	for (int i = 0; i < 6; i++) {
+		dMdq[i] = MatrixXd::Zero(6, 6); // 初始化矩阵都是3x6的全零矩阵
+	}
+
+	dMdq[0] = (getMassMatrix(q + delta * q_.col(0)) - M_now) / delta;
+	dMdq[1] = (getMassMatrix(q + delta * q_.col(1)) - M_now) / delta;
+	dMdq[2] = (getMassMatrix(q + delta * q_.col(2)) - M_now) / delta;
+	dMdq[3] = (getMassMatrix(q + delta * q_.col(3)) - M_now) / delta;
+	dMdq[4] = (getMassMatrix(q + delta * q_.col(4)) - M_now) / delta;
+	dMdq[5] = (getMassMatrix(q + delta * q_.col(5)) - M_now) / delta;
+
 
 	VectorXd dKdq(6);
-	dKdq(0) = 0.5 * q_dot.transpose() * (dMdq0 - M_now) / delta * q_dot;
-	dKdq(1) = 0.5 * q_dot.transpose() * (dMdq1 - M_now) / delta * q_dot;
-	dKdq(2) = 0.5 * q_dot.transpose() * (dMdq2 - M_now) / delta * q_dot;
-	dKdq(3) = 0.5 * q_dot.transpose() * (dMdq3 - M_now) / delta * q_dot;
-	dKdq(4) = 0.5 * q_dot.transpose() * (dMdq4 - M_now) / delta * q_dot;
-	dKdq(5) = 0.5 * q_dot.transpose() * (dMdq5 - M_now) / delta * q_dot;
+	dKdq(0) = 0.5 * q_dot.transpose() * dMdq[0] * q_dot;
+	dKdq(1) = 0.5 * q_dot.transpose() * dMdq[1] * q_dot;
+	dKdq(2) = 0.5 * q_dot.transpose() * dMdq[2] * q_dot;
+	dKdq(3) = 0.5 * q_dot.transpose() * dMdq[3] * q_dot;
+	dKdq(4) = 0.5 * q_dot.transpose() * dMdq[4] * q_dot;
+	dKdq(5) = 0.5 * q_dot.transpose() * dMdq[5] * q_dot;
 
-
+	VectorXd Mdot_multi_qdot(6);
+	MatrixXd temp_Matrix=MatrixXd::Zero(6, 6);
+	/*
+	for (int k = 0; k < 6; k++) {
+		for(int i = 0; i < 6; i++){
+			temp_Matrix = dMdq[i].row(k);
+		}
+		Mdot_multi_qdot(k) = q_dot.transpose() * temp_Matrix * q_dot;
+	}*/
+	for (int i = 0; i < 6; i++) {
+		temp_Matrix += dMdq[i]*q_dot(i);
+	}
+	Mdot_multi_qdot = temp_Matrix * q_dot;
 	
 	getTransMatrix(q);
 	//计算重力矩
@@ -382,10 +393,7 @@ VectorXd RobotDynamics::getTorque(const VectorXd& q,const VectorXd& q_dot, const
 	//将上面计算结果拼接成最终输出的理论力矩
 	VectorXd torque(6);
 
-	torque = M_now * q_dot_dot + (M_now - M_past) / T * q_dot - dKdq + G;
-
-
-
+	torque = M_now * q_dot_dot + Mdot_multi_qdot - dKdq + G;
 
 	return torque;
 }
@@ -427,13 +435,13 @@ void RobotDynamics::getTransMatrix(const VectorXd &q) {
 int main()
 {
 
-	RobotDynamics RD;
+	RobotDynamics objRobotDynamics;
 	
 	
 	MatrixXd M_past(6, 6);
 	MatrixXd M_now(6, 6);
 	VectorXd q_now(6);
-	q_now << 0.05, 0.03, 0.001, 0.24, 0.114, 0.326;
+	q_now << 0.004, 0.004, 0.004, 0.004, 0.004, 0.004;
 
 	VectorXd q_past(6);
 	q_past << 0, 0, 0, 0, 0, 0;
@@ -445,13 +453,13 @@ int main()
 	VectorXd a(6);
 	a << 0,      0,      0    ,  0 ,     0     , 0;
 	
-	M_past = RD.getMassMatrix(q_past);
-	M_now = RD.getMassMatrix(q_now);
+	M_past = objRobotDynamics.getMassMatrix(q_past);
+	M_now = objRobotDynamics.getMassMatrix(q_now);
 
 	VectorXd torque(6);
-	torque = RD.getTorque(q_now, v, a, M_past, M_now, 0.004);
-	VectorXd G = RD.getGravity();
-	cout << "Ga: " << endl << G << endl;
+	torque = objRobotDynamics.getTorque(q_now, v, a, M_now);
+	VectorXd G = objRobotDynamics.getGravity();
+	cout << "torque: " << endl << torque << endl;
 
 	return 0;
 }

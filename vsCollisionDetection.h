@@ -81,7 +81,7 @@ public:
 	
 	// 成员函数声明
 	MatrixXd getMassMatrix(const VectorXd& q);//获取质量矩阵
-	VectorXd getTorque(const VectorXd& q, const VectorXd& q_dot, const VectorXd& q_dot_dot, const MatrixXd& M_past, const MatrixXd& M_now, const double& T);//获取关节力矩
+	VectorXd getTorque(const VectorXd& q, const VectorXd& q_dot, const VectorXd& q_dot_dot, const MatrixXd& M_now);//获取关节力矩
 	VectorXd getGravity();	//获取重力矩
 	void getTransMatrix(const VectorXd &q);//获取齐次变换矩阵
 
