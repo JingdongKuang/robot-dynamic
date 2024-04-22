@@ -81,14 +81,14 @@ Matrix4d trans(const Vector3d trans)
 
 }
 
-Matrix4d DH2Trans(const double theta, const double d, const double a, const double alpha) 
+Matrix4d DH2Trans(const double theta, const double d, const double a, const double alpha)
 {
 
 	Matrix4d T;
-	T << cos(theta), -sin(theta) * cos(alpha), sin(theta)* sin(alpha),   a* cos(theta),
-		 sin(theta), cos(theta)* cos(alpha),   -cos(theta) * sin(alpha), a* sin(theta),
-		 0,          sin(alpha),               cos(alpha),               d,
-		 0,          0,                        0,                        1;
+	T << cos(theta), -sin(theta) * cos(alpha), sin(theta)* sin(alpha), a* cos(theta),
+		sin(theta), cos(theta)* cos(alpha), -cos(theta) * sin(alpha), a* sin(theta),
+		0, sin(alpha), cos(alpha), d,
+		0, 0, 0, 1;
 
 	return T;
 }
@@ -97,14 +97,14 @@ Matrix4d DH2Trans(const double theta, const double d, const double a, const doub
 * INPUT:
 *	theta=[0,0,0,0,0,0],为1*6的向量
 *	DH_table为6*4的矩阵，列分别为offset，d，a，alpha，此处仿照matlab设计
-* 
+*
 * OUTPUT:
 *	返回正向计算矩阵
-* 
+*
 ************************************************/
-Matrix4d forward_kine(const VectorXd theta, const MatrixXd DH_Table) 
+Matrix4d forward_kine(const VectorXd theta, const MatrixXd DH_Table)
 {
-	
+
 	Matrix4d T01 = DH2Trans(DH_Table(0, 0) + theta(0), DH_Table(0, 1), DH_Table(0, 2), DH_Table(0, 3));
 	Matrix4d T12 = DH2Trans(DH_Table(1, 0) + theta(1), DH_Table(1, 1), DH_Table(1, 2), DH_Table(1, 3));
 	Matrix4d T23 = DH2Trans(DH_Table(2, 0) + theta(2), DH_Table(2, 1), DH_Table(2, 2), DH_Table(2, 3));
@@ -112,7 +112,7 @@ Matrix4d forward_kine(const VectorXd theta, const MatrixXd DH_Table)
 	Matrix4d T45 = DH2Trans(DH_Table(4, 0) + theta(4), DH_Table(4, 1), DH_Table(4, 2), DH_Table(4, 3));
 	Matrix4d T56 = DH2Trans(DH_Table(5, 0) + theta(5), DH_Table(5, 1), DH_Table(5, 2), DH_Table(5, 3));
 
-	Matrix4d kine = T01*T12*T23*T34*T45*T56;
+	Matrix4d kine = T01 * T12 * T23 * T34 * T45 * T56;
 	return kine;
 }
 
@@ -124,10 +124,10 @@ Matrix4d forward_kine(const VectorXd theta, const MatrixXd DH_Table)
 *
 *INPUT:
 *	R 为旋转向量，3*1向量，比如（1，2，3）意味着标准单位阵，现在有个新坐标系，x在负x方向，y在负z方向，z在y方向，那么R就是（-1，-3，2）
-*	
+*
 *	旋转的情况I1=R13*I3*R13'
 *	平移的情况：I1=I3+m*(P1*P1'*I-P1'*P1) P1为质心在新坐标系下的位置，m为质量
-* 
+*
 *   P 为平移，指的是质心在新坐标系下的位置，3*1向量
 *	I 为在质心处的惯性张量，3*3矩阵
 *
@@ -136,27 +136,27 @@ Matrix4d forward_kine(const VectorXd theta, const MatrixXd DH_Table)
 *
 ************************************************/
 
-Matrix3d InertialTensor_Trans(const Matrix3d I, const Vector3i R = Vector3i (1,2,3), const Vector3d P = Vector3d (0,0,0),const double m=0) {
+Matrix3d InertialTensor_Trans(const Matrix3d I, const Vector3i R = Vector3i(1, 2, 3), const Vector3d P = Vector3d(0, 0, 0), const double m = 0) {
 	//先旋转
-	Matrix3d Rot = Matrix3d::Zero(3, 3);
-	Rot(abs(R(0))-1, 0) = R(1) / abs(R(1));
-	Rot(abs(R(1))-1, 1) = R(1) / abs(R(1));
-	Rot(abs(R(2))-1, 2) = R(2) / abs(R(2));
-	
-	Matrix3d I_new = Rot * I * Rot.transpose();
-
-	//再平移
-	I_new+=m*(P.dot(P)*Matrix3d::Identity()-P*P.transpose());
-
-	return I_new;
-}
-//变换坐标系后，获得新的重心位置，指的是当前坐标系下的重心位置
-Vector3d getNewGpositon(const Vector3d p,const Vector3i R=Vector3d(1,2,3)) {
 	Matrix3d Rot = Matrix3d::Zero(3, 3);
 	Rot(abs(R(0)) - 1, 0) = R(1) / abs(R(1));
 	Rot(abs(R(1)) - 1, 1) = R(1) / abs(R(1));
 	Rot(abs(R(2)) - 1, 2) = R(2) / abs(R(2));
-	
+
+	Matrix3d I_new = Rot * I * Rot.transpose();
+
+	//再平移
+	I_new += m * (P.dot(P) * Matrix3d::Identity() - P * P.transpose());
+
+	return I_new;
+}
+//变换坐标系后，获得新的重心位置，指的是当前坐标系下的重心位置
+Vector3d getNewGpositon(const Vector3d p, const Vector3i R = Vector3d(1, 2, 3)) {
+	Matrix3d Rot = Matrix3d::Zero(3, 3);
+	Rot(abs(R(0)) - 1, 0) = R(1) / abs(R(1));
+	Rot(abs(R(1)) - 1, 1) = R(1) / abs(R(1));
+	Rot(abs(R(2)) - 1, 2) = R(2) / abs(R(2));
+
 	Vector3d p_new = Rot * p;
 	return p_new;
 }
@@ -212,12 +212,12 @@ MatrixXd RobotDynamics::getMassMatrix(const VectorXd& q) {
 		Jv[i] = MatrixXd::Zero(3, 6); // 初始化矩阵都是3x6的全零矩阵
 		Jw[i] = MatrixXd::Zero(3, 6);
 	}
-	MatrixXd JwTest(3,6);
+	MatrixXd JwTest(3, 6);
 
 	//Jv6	
 	temp = Q * T06 * r[5];
 	Jv[5].block(0, 0, 3, 1) = temp.head(3);
-	temp = T01 * Q * T12 * T23 * T34 * T45 * T56* r[5];
+	temp = T01 * Q * T12 * T23 * T34 * T45 * T56 * r[5];
 	Jv[5].block(0, 1, 3, 1) = temp.head(3);
 	temp = T02 * Q * T23 * T34 * T45 * T56 * r[5];
 	Jv[5].block(0, 2, 3, 1) = temp.head(3);
@@ -230,7 +230,7 @@ MatrixXd RobotDynamics::getMassMatrix(const VectorXd& q) {
 	//Jv5
 	temp = Q * T05 * r[4];
 	Jv[4].block(0, 0, 3, 1) = temp.head(3);
-	temp = T01 * Q * T12 * T23 * T34 *T45* r[4];
+	temp = T01 * Q * T12 * T23 * T34 * T45 * r[4];
 	Jv[4].block(0, 1, 3, 1) = temp.head(3);
 	temp = T02 * Q * T23 * T34 * T45 * r[4];
 	Jv[4].block(0, 2, 3, 1) = temp.head(3);
@@ -290,12 +290,12 @@ MatrixXd RobotDynamics::getMassMatrix(const VectorXd& q) {
 
 	//质量矩阵
 	MatrixXd MassMatrix(6, 6);
-	MassMatrix =	Jv[0].transpose() * m[0] * Jv[0] + Jw[0].transpose() * I[0] * Jw[0] +
-					Jv[1].transpose() * m[1] * Jv[1] + Jw[1].transpose() * I[1] * Jw[1] +
-					Jv[2].transpose() * m[2] * Jv[2] + Jw[2].transpose() * I[2] * Jw[2] +
-					Jv[3].transpose() * m[3] * Jv[3] + Jw[3].transpose() * I[3] * Jw[3] +
-					Jv[4].transpose() * m[4] * Jv[4] + Jw[4].transpose() * I[4] * Jw[4] +
-					Jv[5].transpose() * m[5] * Jv[5] + Jw[5].transpose() * I[5] * Jw[5];
+	MassMatrix = Jv[0].transpose() * m[0] * Jv[0] + Jw[0].transpose() * I[0] * Jw[0] +
+		Jv[1].transpose() * m[1] * Jv[1] + Jw[1].transpose() * I[1] * Jw[1] +
+		Jv[2].transpose() * m[2] * Jv[2] + Jw[2].transpose() * I[2] * Jw[2] +
+		Jv[3].transpose() * m[3] * Jv[3] + Jw[3].transpose() * I[3] * Jw[3] +
+		Jv[4].transpose() * m[4] * Jv[4] + Jw[4].transpose() * I[4] * Jw[4] +
+		Jv[5].transpose() * m[5] * Jv[5] + Jw[5].transpose() * I[5] * Jw[5];
 	return MassMatrix;
 }
 
@@ -318,7 +318,7 @@ MatrixXd RobotDynamics::getMassMatrix(const VectorXd& q) {
 ***********************************************/
 VectorXd RobotDynamics::getTorque(const VectorXd& q, const VectorXd& q_dot, const VectorXd& q_dot_dot, const MatrixXd& M_now) {
 	//计算拉格朗日方程中对q求偏导的项，通过数值方法求得
-	double delta = 0.000000001;//数值微分的步长
+	double delta = 0.00000001;//数值微分的步长
 	//每个分量的小变化
 	MatrixXd q_ = MatrixXd::Identity(6, 6);
 	//计算每个分量的小变化对应的质量矩阵
@@ -344,7 +344,7 @@ VectorXd RobotDynamics::getTorque(const VectorXd& q, const VectorXd& q_dot, cons
 	dKdq(5) = 0.5 * q_dot.transpose() * dMdq[5] * q_dot;
 
 	VectorXd Mdot_multi_qdot(6);
-	MatrixXd temp_Matrix=MatrixXd::Zero(6, 6);
+	MatrixXd temp_Matrix = MatrixXd::Zero(6, 6);
 	/*
 	for (int k = 0; k < 6; k++) {
 		for(int i = 0; i < 6; i++){
@@ -353,40 +353,40 @@ VectorXd RobotDynamics::getTorque(const VectorXd& q, const VectorXd& q_dot, cons
 		Mdot_multi_qdot(k) = q_dot.transpose() * temp_Matrix * q_dot;
 	}*/
 	for (int i = 0; i < 6; i++) {
-		temp_Matrix += dMdq[i]*q_dot(i);
+		temp_Matrix += dMdq[i] * q_dot(i);
 	}
 	Mdot_multi_qdot = temp_Matrix * q_dot;
-	
+
 	getTransMatrix(q);
 	//计算重力矩
-	MatrixXd G0 =	m[0] * g * Q * T01 * r[0] + \
-					m[1] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T02) * r[1] + \
-					m[2] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T03) * r[2] + \
-					m[3] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T04) * r[3] + \
-					m[4] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T05) * r[4] + \
-					m[5] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T06) * r[5];
-	G(0) = G0(0,0);
-	MatrixXd G1 =	m[1] * g * T01 * Q * T12 * r[1] + \
-					m[2] * g * T01 * Q * T12 * T23 * r[2] + \
-					m[3] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T04) * r[3] + \
-					m[4] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T05) * r[4] + \
-					m[5] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T06) * r[5];
+	MatrixXd G0 = m[0] * g * Q * T01 * r[0] + \
+		m[1] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T02) * r[1] + \
+		m[2] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T03) * r[2] + \
+		m[3] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T04) * r[3] + \
+		m[4] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T05) * r[4] + \
+		m[5] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T06) * r[5];
+	G(0) = G0(0, 0);
+	MatrixXd G1 = m[1] * g * T01 * Q * T12 * r[1] + \
+		m[2] * g * T01 * Q * T12 * T23 * r[2] + \
+		m[3] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T04) * r[3] + \
+		m[4] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T05) * r[4] + \
+		m[5] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T06) * r[5];
 	G(1) = G1(0, 0);
-	MatrixXd G2 =	m[2] * g * T02 * Q * T23 * r[2] + \
-					m[3] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T04) * r[3] + \
-					m[4] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T05) * r[4] + \
-					m[5] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T06) * r[5];
+	MatrixXd G2 = m[2] * g * T02 * Q * T23 * r[2] + \
+		m[3] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T04) * r[3] + \
+		m[4] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T05) * r[4] + \
+		m[5] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T06) * r[5];
 	G(2) = G2(0, 0);
-	MatrixXd G3 =	m[3] * g * T03 * Q * T34 * r[3] + \
-					m[4] * g * T03 * Q * T34 * (inverseHomogeneousTransform(T04) * T05) * r[4] + \
-					m[5] * g * T03 * Q * T34 * (inverseHomogeneousTransform(T04) * T06) * r[5];
+	MatrixXd G3 = m[3] * g * T03 * Q * T34 * r[3] + \
+		m[4] * g * T03 * Q * T34 * (inverseHomogeneousTransform(T04) * T05) * r[4] + \
+		m[5] * g * T03 * Q * T34 * (inverseHomogeneousTransform(T04) * T06) * r[5];
 	G(3) = G3(0, 0);
-	MatrixXd G4 =	m[4] * g * T04 * Q * T45 * r[4] + \
-					m[5] * g * T04 * Q * T45 * T56 * r[5];
-	G(4) = G4(0,0);
-	MatrixXd G5 =	m[5] * g * T05 * Q * T56 * r[5];
-	G(5) = G5(0,0);
-	
+	MatrixXd G4 = m[4] * g * T04 * Q * T45 * r[4] + \
+		m[5] * g * T04 * Q * T45 * T56 * r[5];
+	G(4) = G4(0, 0);
+	MatrixXd G5 = m[5] * g * T05 * Q * T56 * r[5];
+	G(5) = G5(0, 0);
+
 
 
 
@@ -401,14 +401,14 @@ VectorXd RobotDynamics::getTorque(const VectorXd& q, const VectorXd& q_dot, cons
 //获取齐次变换矩阵的微分
 MatrixXd RobotDynamics::get_T_Derivative_of_time() {
 	MatrixXd dTdq(6, 6);
-	
+
 	return dTdq;
 }
 //获取齐次变换矩阵对于某个关节角度的微分
 
-MatrixXd RobotDynamics::get_T_Derivative_of_qi(int T0i,int qi) {
+MatrixXd RobotDynamics::get_T_Derivative_of_qi(int T0i, int qi) {
 	MatrixXd dTdq(6, 1);
-	
+
 	return dTdq;
 }
 
@@ -416,7 +416,7 @@ VectorXd RobotDynamics::getGravity() {
 	return G;
 }
 
-void RobotDynamics::getTransMatrix(const VectorXd &q) {
+void RobotDynamics::getTransMatrix(const VectorXd& q) {
 
 	T01 = DH2Trans(DH_Table(0, 0) + q(0), DH_Table(0, 1), DH_Table(0, 2), DH_Table(0, 3));
 	T12 = DH2Trans(DH_Table(1, 0) + q(1), DH_Table(1, 1), DH_Table(1, 2), DH_Table(1, 3));
@@ -430,36 +430,42 @@ void RobotDynamics::getTransMatrix(const VectorXd &q) {
 	T05 = T04 * T45;
 	T06 = T05 * T56;
 }
+//输出齐次变换矩阵
+void RobotDynamics::coutTransMatrix() {
+	cout << "T01: " << endl << T01 << endl;
+	cout << "T02: " << endl << T02 << endl;
+	cout << "T03: " << endl << T03 << endl;
+	cout << "T04: " << endl << T04 << endl;
+	cout << "T05: " << endl << T05 << endl;
+	cout << "T06: " << endl << T06 << endl;
+	
+}
+
 
 
 int main()
 {
 
 	RobotDynamics objRobotDynamics;
-	
-	
+
+
 	MatrixXd M_past(6, 6);
 	MatrixXd M_now(6, 6);
 	VectorXd q_now(6);
-	q_now << 0.004, 0.004, 0.004, 0.004, 0.004, 0.004;
-
-	VectorXd q_past(6);
-	q_past << 0, 0, 0, 0, 0, 0;
-
+	q_now << 0,0,0,0,0,0;
 
 	VectorXd v(6);
-	v << 1, 1, 1, 1, 1, 1;
+	v << 2, 2, 2, 2, 2, 2;
 
 	VectorXd a(6);
-	a << 0,      0,      0    ,  0 ,     0     , 0;
-	
-	M_past = objRobotDynamics.getMassMatrix(q_past);
+	a << 0.35, 0.35, 0.35, 0.35, 0.35, 0.35;
+
 	M_now = objRobotDynamics.getMassMatrix(q_now);
 
 	VectorXd torque(6);
-	torque = objRobotDynamics.getTorque(q_now, v, a, M_now);
+	//torque = objRobotDynamics.getTorque(q_now, v, a, M_now);
 	VectorXd G = objRobotDynamics.getGravity();
-	cout << "torque: " << endl << torque << endl;
+	cout << "M_now: " << endl << M_now << endl;
 
 	return 0;
 }
