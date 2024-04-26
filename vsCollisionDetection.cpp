@@ -81,7 +81,7 @@ Matrix4d trans(const Vector3d trans)
 
 }
 
-Matrix4d DH2Trans(const double theta, const double d, const double a, const double alpha)
+Matrix4d RobotDynamics::DH2Trans(const double theta, const double d, const double a, const double alpha)
 {
 
 	Matrix4d T;
@@ -93,28 +93,7 @@ Matrix4d DH2Trans(const double theta, const double d, const double a, const doub
 	return T;
 }
 
-/***********************************************
-* INPUT:
-*	theta=[0,0,0,0,0,0],为1*6的向量
-*	DH_table为6*4的矩阵，列分别为offset，d，a，alpha，此处仿照matlab设计
-*
-* OUTPUT:
-*	返回正向计算矩阵
-*
-************************************************/
-Matrix4d forward_kine(const VectorXd theta, const MatrixXd DH_Table)
-{
 
-	Matrix4d T01 = DH2Trans(DH_Table(0, 0) + theta(0), DH_Table(0, 1), DH_Table(0, 2), DH_Table(0, 3));
-	Matrix4d T12 = DH2Trans(DH_Table(1, 0) + theta(1), DH_Table(1, 1), DH_Table(1, 2), DH_Table(1, 3));
-	Matrix4d T23 = DH2Trans(DH_Table(2, 0) + theta(2), DH_Table(2, 1), DH_Table(2, 2), DH_Table(2, 3));
-	Matrix4d T34 = DH2Trans(DH_Table(3, 0) + theta(3), DH_Table(3, 1), DH_Table(3, 2), DH_Table(3, 3));
-	Matrix4d T45 = DH2Trans(DH_Table(4, 0) + theta(4), DH_Table(4, 1), DH_Table(4, 2), DH_Table(4, 3));
-	Matrix4d T56 = DH2Trans(DH_Table(5, 0) + theta(5), DH_Table(5, 1), DH_Table(5, 2), DH_Table(5, 3));
-
-	Matrix4d kine = T01 * T12 * T23 * T34 * T45 * T56;
-	return kine;
-}
 
 
 /***********************************************
@@ -400,8 +379,9 @@ VectorXd RobotDynamics::getTorque(const VectorXd& q, const VectorXd& q_dot, cons
 
 //获取齐次变换矩阵的微分
 MatrixXd RobotDynamics::get_T_Derivative_of_time() {
+	
+	
 	MatrixXd dTdq(6, 6);
-
 	return dTdq;
 }
 //获取齐次变换矩阵对于某个关节角度的微分
@@ -438,34 +418,59 @@ void RobotDynamics::coutTransMatrix() {
 	cout << "T04: " << endl << T04 << endl;
 	cout << "T05: " << endl << T05 << endl;
 	cout << "T06: " << endl << T06 << endl;
-	
 }
+//见机器人动力学与控制p.78
+VectorXd RobotDynamics::getTorque_Newton_Euler(const VectorXd& q, const VectorXd& q_dot, const VectorXd& q_dot_dot){
+	Vector3d w[7];//公式1-53
+	w[0] <<0,0,0; // 初始化全零向量
+	Vector3d epsilon[7];//公式1-74
+	epsilon[0] << 0, 0, 0; // 初始化全零向量
+	Vector3d a[7];//公式2-79
+	a[0] << 0, 0, 0; // 初始化全零向量
+	Matrix3d Ri_iminus1;
 
+	Vector3d z;
+	z<< 0, 0, 1;
+
+	for (int i = 1; i < 7; i++) {
+		Matrix4d T = DH2Trans(DH_Table(i-1, 0) + q(i-1), DH_Table(i-1, 1), DH_Table(i-1, 2), DH_Table(i-1, 3));
+		Ri_iminus1 = T.block(0, 0, 3, 3).transpose();
+		w[i] = Ri_iminus1*(w[i - 1] + z*q_dot(i-1));//公式1-53
+		epsilon[i] = Ri_iminus1 * (epsilon[i - 1] + w[i - 1].cross(z*q_dot(i-1)) + z*q_dot_dot(i-1));//公式1-74
+		//a[i] = ;//公式2-79
+	}
+
+
+	VectorXd torque(6);
+	return torque;
+}
 
 
 int main()
 {
-
 	RobotDynamics objRobotDynamics;
+	ChebyshefFilter objChebyshefFilter;
 
 
 	MatrixXd M_past(6, 6);
 	MatrixXd M_now(6, 6);
 	VectorXd q_now(6);
-	q_now << 0,0,0,0,0,0;
+	q_now << 0.004, 0.004, 0.004, 0.004, 0.004, 0.004;
 
 	VectorXd v(6);
 	v << 2, 2, 2, 2, 2, 2;
 
 	VectorXd a(6);
-	a << 0.35, 0.35, 0.35, 0.35, 0.35, 0.35;
+	a << 2, 2, 2, 2, 2, 2;
 
 	M_now = objRobotDynamics.getMassMatrix(q_now);
 
 	VectorXd torque(6);
-	//torque = objRobotDynamics.getTorque(q_now, v, a, M_now);
+	torque = objRobotDynamics.getTorque(q_now, v, a, M_now);
 	VectorXd G = objRobotDynamics.getGravity();
-	cout << "M_now: " << endl << M_now << endl;
+	cout << "torque: " << endl << torque << endl;
 
+	double data = objChebyshefFilter.dofilter(1);
+	cout << "data: " << data << endl;
 	return 0;
 }

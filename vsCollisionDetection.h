@@ -8,6 +8,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include "Chebyshef_40hz_Order3.h"
 #define PI 3.1415926535897931
 #define toRad 0.01745329252
 using namespace Eigen;
@@ -85,7 +86,7 @@ public:
 	VectorXd getGravity();	//获取重力矩
 	void getTransMatrix(const VectorXd& q);//获取齐次变换矩阵
 	void coutTransMatrix();//输出齐次变换矩阵
-
+	VectorXd getTorque_Newton_Euler(const VectorXd& q, const VectorXd& q_dot, const VectorXd& q_dot_dot);//获取关节力矩牛顿欧拉法
 
 private:
 	/*变量声明*/
@@ -119,4 +120,5 @@ private:
 	Matrix4d inverseHomogeneousTransform(const Matrix4d& transform);
 	MatrixXd get_T_Derivative_of_time();//获取齐次变换矩阵对于时间的微分
 	MatrixXd get_T_Derivative_of_qi(int T0i, int qi);//获取齐次变换矩阵对于qi的微分
+	Matrix4d DH2Trans(const double theta, const double d, const double a, const double alpha);//DH参数转换为齐次变换矩阵
 };
