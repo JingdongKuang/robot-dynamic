@@ -69,6 +69,7 @@ Matrix4d rotz4d(const double angle)
 
 Matrix4d trans(const Vector3d trans)
 {
+
 	Matrix4d res = Matrix4d::Identity();
 
 	res(0, 3) = trans(0);
@@ -78,17 +79,15 @@ Matrix4d trans(const Vector3d trans)
 	res(2, 3) = trans(2);
 
 	return res;
-
 }
 
 Matrix4d RobotDynamics::DH2Trans(const double theta, const double d, const double a, const double alpha)
 {
-
 	Matrix4d T;
-	T << cos(theta), -sin(theta) * cos(alpha), sin(theta)* sin(alpha), a* cos(theta),
-		sin(theta), cos(theta)* cos(alpha), -cos(theta) * sin(alpha), a* sin(theta),
-		0, sin(alpha), cos(alpha), d,
-		0, 0, 0, 1;
+	T << cos(theta),	-sin(theta) * cos(alpha),	sin(theta)* sin(alpha),		a* cos(theta),
+		sin(theta),		cos(theta)* cos(alpha),		-cos(theta) * sin(alpha),	a* sin(theta),
+		0,				sin(alpha),					cos(alpha),					d,
+		0,				0,							0,							1;
 
 	return T;
 }
@@ -324,13 +323,7 @@ VectorXd RobotDynamics::getTorque(const VectorXd& q, const VectorXd& q_dot, cons
 
 	VectorXd Mdot_multi_qdot(6);
 	MatrixXd temp_Matrix = MatrixXd::Zero(6, 6);
-	/*
-	for (int k = 0; k < 6; k++) {
-		for(int i = 0; i < 6; i++){
-			temp_Matrix = dMdq[i].row(k);
-		}
-		Mdot_multi_qdot(k) = q_dot.transpose() * temp_Matrix * q_dot;
-	}*/
+
 	for (int i = 0; i < 6; i++) {
 		temp_Matrix += dMdq[i] * q_dot(i);
 	}
@@ -338,32 +331,32 @@ VectorXd RobotDynamics::getTorque(const VectorXd& q, const VectorXd& q_dot, cons
 
 	getTransMatrix(q);
 	//计算重力矩
-	MatrixXd G0 = m[0] * g * Q * T01 * r[0] + \
-		m[1] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T02) * r[1] + \
-		m[2] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T03) * r[2] + \
-		m[3] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T04) * r[3] + \
-		m[4] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T05) * r[4] + \
-		m[5] * g * Q * T01 * (inverseHomogeneousTransform(T01) * T06) * r[5];
+	MatrixXd G0 = m[0] * g.transpose() * Q * T01 * r[0] + \
+		m[1] * g.transpose() * Q * T01 * (inverseHomogeneousTransform(T01) * T02) * r[1] + \
+		m[2] * g.transpose() * Q * T01 * (inverseHomogeneousTransform(T01) * T03) * r[2] + \
+		m[3] * g.transpose() * Q * T01 * (inverseHomogeneousTransform(T01) * T04) * r[3] + \
+		m[4] * g.transpose() * Q * T01 * (inverseHomogeneousTransform(T01) * T05) * r[4] + \
+		m[5] * g.transpose() * Q * T01 * (inverseHomogeneousTransform(T01) * T06) * r[5];
 	G(0) = G0(0, 0);
-	MatrixXd G1 = m[1] * g * T01 * Q * T12 * r[1] + \
-		m[2] * g * T01 * Q * T12 * T23 * r[2] + \
-		m[3] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T04) * r[3] + \
-		m[4] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T05) * r[4] + \
-		m[5] * g * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T06) * r[5];
+	MatrixXd G1 = m[1] * g.transpose() * T01 * Q * T12 * r[1] + \
+		m[2] * g.transpose() * T01 * Q * T12 * T23 * r[2] + \
+		m[3] * g.transpose() * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T04) * r[3] + \
+		m[4] * g.transpose() * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T05) * r[4] + \
+		m[5] * g.transpose() * T01 * Q * T12 * (inverseHomogeneousTransform(T02) * T06) * r[5];
 	G(1) = G1(0, 0);
-	MatrixXd G2 = m[2] * g * T02 * Q * T23 * r[2] + \
-		m[3] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T04) * r[3] + \
-		m[4] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T05) * r[4] + \
-		m[5] * g * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T06) * r[5];
+	MatrixXd G2 = m[2] * g.transpose() * T02 * Q * T23 * r[2] + \
+		m[3] * g.transpose() * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T04) * r[3] + \
+		m[4] * g.transpose() * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T05) * r[4] + \
+		m[5] * g.transpose() * T02 * Q * T23 * (inverseHomogeneousTransform(T03) * T06) * r[5];
 	G(2) = G2(0, 0);
-	MatrixXd G3 = m[3] * g * T03 * Q * T34 * r[3] + \
-		m[4] * g * T03 * Q * T34 * (inverseHomogeneousTransform(T04) * T05) * r[4] + \
-		m[5] * g * T03 * Q * T34 * (inverseHomogeneousTransform(T04) * T06) * r[5];
+	MatrixXd G3 = m[3] * g.transpose() * T03 * Q * T34 * r[3] + \
+		m[4] * g.transpose() * T03 * Q * T34 * (inverseHomogeneousTransform(T04) * T05) * r[4] + \
+		m[5] * g.transpose() * T03 * Q * T34 * (inverseHomogeneousTransform(T04) * T06) * r[5];
 	G(3) = G3(0, 0);
-	MatrixXd G4 = m[4] * g * T04 * Q * T45 * r[4] + \
-		m[5] * g * T04 * Q * T45 * T56 * r[5];
+	MatrixXd G4 = m[4] * g.transpose() * T04 * Q * T45 * r[4] + \
+		m[5] * g.transpose() * T04 * Q * T45 * T56 * r[5];
 	G(4) = G4(0, 0);
-	MatrixXd G5 = m[5] * g * T05 * Q * T56 * r[5];
+	MatrixXd G5 = m[5] * g.transpose() * T05 * Q * T56 * r[5];
 	G(5) = G5(0, 0);
 
 
@@ -413,6 +406,11 @@ void RobotDynamics::getTransMatrix(const VectorXd& q) {
 //输出齐次变换矩阵
 void RobotDynamics::coutTransMatrix() {
 	cout << "T01: " << endl << T01 << endl;
+	cout << "T12: " << endl << T12 << endl;
+	cout << "T23: " << endl << T23 << endl;
+	cout << "T34: " << endl << T34 << endl;
+	cout << "T45: " << endl << T45 << endl;
+	cout << "T56: " << endl << T56 << endl;
 	cout << "T02: " << endl << T02 << endl;
 	cout << "T03: " << endl << T03 << endl;
 	cout << "T04: " << endl << T04 << endl;
@@ -420,28 +418,60 @@ void RobotDynamics::coutTransMatrix() {
 	cout << "T06: " << endl << T06 << endl;
 }
 //见机器人动力学与控制p.78
+//newton-euler方法
 VectorXd RobotDynamics::getTorque_Newton_Euler(const VectorXd& q, const VectorXd& q_dot, const VectorXd& q_dot_dot){
+	VectorXd torque(6);
+	Vector3d z;
+	z << 0, 0, 1;
 	Vector3d w[7];//公式1-53
 	w[0] <<0,0,0; // 初始化全零向量
 	Vector3d epsilon[7];//公式1-74
 	epsilon[0] << 0, 0, 0; // 初始化全零向量
 	Vector3d a[7];//公式2-79
-	a[0] << 0, 0, 0; // 初始化全零向量
+	a[0] = -g.head(3); // 初始化全零向量
+	Vector3d a_C_i[7];//公式2-76
 	Matrix3d Ri_iminus1;
-
-	Vector3d z;
-	z<< 0, 0, 1;
-
+	Vector3d p_i_tilde_star[6];
+	Vector3d rc;
 	for (int i = 1; i < 7; i++) {
 		Matrix4d T = DH2Trans(DH_Table(i-1, 0) + q(i-1), DH_Table(i-1, 1), DH_Table(i-1, 2), DH_Table(i-1, 3));
 		Ri_iminus1 = T.block(0, 0, 3, 3).transpose();
-		w[i] = Ri_iminus1*(w[i - 1] + z*q_dot(i-1));//公式1-53
-		epsilon[i] = Ri_iminus1 * (epsilon[i - 1] + w[i - 1].cross(z*q_dot(i-1)) + z*q_dot_dot(i-1));//公式1-74
-		//a[i] = ;//公式2-79
+		p_i_tilde_star[i-1] = Ri_iminus1 * T.block(0, 3, 3, 1);
+		w[i] = Ri_iminus1*(w[i - 1] + z*q_dot(i-1));//公式1-53(此公式确认正确)
+		cout << "w[" << i << "]: " << endl << w[i] << endl;
+		epsilon[i] = Ri_iminus1 * (epsilon[i - 1] + w[i - 1].cross(z * q_dot(i - 1))  + z*q_dot_dot(i-1));//公式1-74
+		cout<< "epsilon[" << i << "]: " << endl << epsilon[i] << endl;
+		a[i] = Ri_iminus1 * a[i - 1] + epsilon[i].cross(p_i_tilde_star[i-1]) + w[i].cross(w[i].cross(p_i_tilde_star[i-1]));//公式2-79
+		rc = r[i - 1].head(3);
+		a_C_i[i] = a[i] + epsilon[i].cross(rc) + w[i].cross(w[i].cross(rc));//公式2-76
 	}
-
-
-	VectorXd torque(6);
+	Vector3d n[7];
+	n[6] << 0, 0, 0;
+	Vector3d N[6];
+	Vector3d f[7];
+	f[6] << 0, 0, 0;
+	Vector3d F[6];
+	Matrix3d Ri_iplus1;
+	Matrix4d T;
+	for (int i = 5; i >= 0; i--) {
+		rc = r[i].head(3);
+		F[i] = m[i] * a_C_i[i + 1];//公式2-80
+		N[i] = I[i] * epsilon[i+1] + w[i+1].cross(I[i] * w[i+1]);//公式2-73
+		if (i == 5) {
+			f[i] = F[i];//公式2-72
+			n[i] = N[i]+ p_i_tilde_star[i].cross(f[i])+rc.cross(F[i]);//公式2-74
+		}
+		else {
+			T = DH2Trans(DH_Table(i+1, 0) + q(i+1), DH_Table(i+1, 1), DH_Table(i+1, 2), DH_Table(i+1, 3));
+			Ri_iplus1 = T.block(0, 0, 3, 3);
+			f[i] = Ri_iplus1 * f[i + 1] + F[i];//公式2-72
+			//n[i] = Ri_iplus1 * n[i + 1] + N[i] + p_i_tilde_star[i].cross(f[i]) + rc.cross(F[i]);//公式2-74
+			n[i] = Ri_iplus1 * n[i + 1] + N[i] + (p_i_tilde_star[i] + rc).cross(F[i]) + p_i_tilde_star[i].cross(Ri_iplus1 * f[i + 1]);//公式2-74
+		}
+		Matrix4d T1 = DH2Trans(DH_Table(i, 0) + q(i), DH_Table(i, 1), DH_Table(i, 2), DH_Table(i, 3));
+		Matrix3d Ri_iminus1_ = T1.block(0, 0, 3, 3).transpose();
+		torque(i) = (Ri_iminus1_ * z).transpose()* n[i];//公式2-75
+	}
 	return torque;
 }
 
@@ -455,8 +485,8 @@ int main()
 	MatrixXd M_past(6, 6);
 	MatrixXd M_now(6, 6);
 	VectorXd q_now(6);
-	q_now << 0.004, 0.004, 0.004, 0.004, 0.004, 0.004;
-
+	q_now << 0, 0, 0, 0, 0, 0;
+	
 	VectorXd v(6);
 	v << 2, 2, 2, 2, 2, 2;
 
@@ -470,7 +500,9 @@ int main()
 	VectorXd G = objRobotDynamics.getGravity();
 	cout << "torque: " << endl << torque << endl;
 
-	double data = objChebyshefFilter.dofilter(1);
-	cout << "data: " << data << endl;
+	torque = objRobotDynamics.getTorque_Newton_Euler(q_now, v, a);
+	cout << "torque: " << endl << torque << endl;
+
+
 	return 0;
 }
