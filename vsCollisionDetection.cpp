@@ -428,7 +428,7 @@ VectorXd RobotDynamics::getTorque_Newton_Euler(const VectorXd& q, const VectorXd
 	Vector3d epsilon[7];//公式1-74
 	epsilon[0] << 0, 0, 0; // 初始化全零向量
 	Vector3d a[7];//公式2-79
-	a[0] = -g.head(3); // 初始化全零向量
+	a[0] = g.head(3); // 初始化全零向量
 	Vector3d a_C_i[7];//公式2-76
 	Matrix3d Ri_iminus1;
 	Vector3d p_i_tilde_star[6];
@@ -436,14 +436,17 @@ VectorXd RobotDynamics::getTorque_Newton_Euler(const VectorXd& q, const VectorXd
 	for (int i = 1; i < 7; i++) {
 		Matrix4d T = DH2Trans(DH_Table(i-1, 0) + q(i-1), DH_Table(i-1, 1), DH_Table(i-1, 2), DH_Table(i-1, 3));
 		Ri_iminus1 = T.block(0, 0, 3, 3).transpose();
-		p_i_tilde_star[i-1] = Ri_iminus1 * T.block(0, 3, 3, 1);
+		//p_i_tilde_star[i-1] = Ri_iminus1 * T.block(0, 3, 3, 1);
+		p_i_tilde_star[i - 1]<< DH_Table(i - 1, 2), DH_Table(i - 1, 1)*sin(DH_Table(i - 1, 3)), DH_Table(i - 1, 1)*cos(DH_Table(i - 1, 3));//(此公式确认正确)
 		w[i] = Ri_iminus1*(w[i - 1] + z*q_dot(i-1));//公式1-53(此公式确认正确)
-		cout << "w[" << i << "]: " << endl << w[i] << endl;
-		epsilon[i] = Ri_iminus1 * (epsilon[i - 1] + w[i - 1].cross(z * q_dot(i - 1))  + z*q_dot_dot(i-1));//公式1-74
-		cout<< "epsilon[" << i << "]: " << endl << epsilon[i] << endl;
+		//cout << "w[" << i << "]: " << endl << w[i] << endl;
+		epsilon[i] = Ri_iminus1 * (epsilon[i - 1] + w[i - 1].cross(z * q_dot(i - 1))  + z*q_dot_dot(i-1));//公式1-74(此公式确认正确)
+		//cout << "epsilon[" << i << "]: " << endl << epsilon[i] << endl;
 		a[i] = Ri_iminus1 * a[i - 1] + epsilon[i].cross(p_i_tilde_star[i-1]) + w[i].cross(w[i].cross(p_i_tilde_star[i-1]));//公式2-79
+		//cout << "a[" << i << "]: " << endl << a[i] << endl;
 		rc = r[i - 1].head(3);
 		a_C_i[i] = a[i] + epsilon[i].cross(rc) + w[i].cross(w[i].cross(rc));//公式2-76
+		//cout << "a_C_i[" << i << "]: " << endl << a_C_i[i] << endl;
 	}
 	Vector3d n[7];
 	n[6] << 0, 0, 0;
@@ -455,18 +458,24 @@ VectorXd RobotDynamics::getTorque_Newton_Euler(const VectorXd& q, const VectorXd
 	Matrix4d T;
 	for (int i = 5; i >= 0; i--) {
 		rc = r[i].head(3);
-		F[i] = m[i] * a_C_i[i + 1];//公式2-80
-		N[i] = I[i] * epsilon[i+1] + w[i+1].cross(I[i] * w[i+1]);//公式2-73
+		F[i] = m[i] * a_C_i[i + 1];//公式2-80(确认正确)
+		//cout << "F[" << i+1 << "]: " << endl << F[i] << endl;
+		N[i] = I_[i] * epsilon[i+1] + w[i+1].cross(I_[i] * w[i+1]);//公式2-73
+		//cout<<"N["<<i+1<<"]: "<<endl<<N[i]<<endl;
 		if (i == 5) {
-			f[i] = F[i];//公式2-72
+			f[i] = F[i];//公式2-72（确认正确）
+			cout << "f[" << i+1 << "]: " << endl << f[i] << endl;
 			n[i] = N[i]+ p_i_tilde_star[i].cross(f[i])+rc.cross(F[i]);//公式2-74
+			cout<< "n[" << i+1 << "]: " << endl << n[i] << endl;
 		}
 		else {
 			T = DH2Trans(DH_Table(i+1, 0) + q(i+1), DH_Table(i+1, 1), DH_Table(i+1, 2), DH_Table(i+1, 3));
 			Ri_iplus1 = T.block(0, 0, 3, 3);
 			f[i] = Ri_iplus1 * f[i + 1] + F[i];//公式2-72
-			//n[i] = Ri_iplus1 * n[i + 1] + N[i] + p_i_tilde_star[i].cross(f[i]) + rc.cross(F[i]);//公式2-74
-			n[i] = Ri_iplus1 * n[i + 1] + N[i] + (p_i_tilde_star[i] + rc).cross(F[i]) + p_i_tilde_star[i].cross(Ri_iplus1 * f[i + 1]);//公式2-74
+			cout << "f[" << i+1 << "]: " << endl << f[i] << endl;
+			n[i] = Ri_iplus1 * n[i + 1] + N[i] + p_i_tilde_star[i].cross(f[i]) + rc.cross(F[i]);//公式2-74
+			cout << "n[" << i+1 << "]: " << endl << n[i] << endl;
+			//n[i] = Ri_iplus1 * n[i + 1] + N[i] + (p_i_tilde_star[i] + rc).cross(F[i]) + p_i_tilde_star[i].cross(Ri_iplus1 * f[i + 1]);//公式2-74
 		}
 		Matrix4d T1 = DH2Trans(DH_Table(i, 0) + q(i), DH_Table(i, 1), DH_Table(i, 2), DH_Table(i, 3));
 		Matrix3d Ri_iminus1_ = T1.block(0, 0, 3, 3).transpose();
