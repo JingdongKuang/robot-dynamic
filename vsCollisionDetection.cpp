@@ -5,10 +5,16 @@
 using namespace Eigen;
 using namespace std;
 
+//输出矩阵txt
+void matrix_save_txt(const MatrixXd& mat, string filename)
+{
+	ofstream outfile(filename, ios::trunc);
+	outfile << mat;
+	outfile.close();
+	cout<< "Save " << filename << " successfully!" << endl;
+}
 
 //rot 4d
-
-
 Matrix4d rotx4d(const double angle)
 
 {
@@ -296,7 +302,7 @@ MatrixXd RobotDynamics::getMassMatrix(const VectorXd& q) {
 ***********************************************/
 VectorXd RobotDynamics::getTorque(const VectorXd& q, const VectorXd& q_dot, const VectorXd& q_dot_dot, const MatrixXd& M_now) {
 	//计算拉格朗日方程中对q求偏导的项，通过数值方法求得
-	double delta = 0.00000001;//数值微分的步长
+	double delta = 0.000000000001;//数值微分的步长
 	//每个分量的小变化
 	MatrixXd q_ = MatrixXd::Identity(6, 6);
 	//计算每个分量的小变化对应的质量矩阵
@@ -384,6 +390,22 @@ MatrixXd RobotDynamics::get_T_Derivative_of_qi(int T0i, int qi) {
 
 	return dTdq;
 }
+//算子K
+MatrixXd RobotDynamics::Operator_K(const Vector3d input) {
+	MatrixXd Operator_K(3, 6);
+	Operator_K <<	input(0),	input(1),	input(2),	0,			0,			0,
+					0,			input(0),	0,			input(1),	input(2),	0,
+					0,			0,			input(0),	0,			input(1),	input(2);
+	return Operator_K;
+}
+//算子S
+Matrix3d RobotDynamics::Operator_S(const Vector3d input) {
+	Matrix3d Operator_S;
+	Operator_S <<	0,			-input(2),	input(1),
+					input(2),	0,			-input(0),
+					-input(1),	input(0),	0;
+	return Operator_S;
+}
 
 VectorXd RobotDynamics::getGravity() {
 	return G;
@@ -436,17 +458,12 @@ VectorXd RobotDynamics::getTorque_Newton_Euler(const VectorXd& q, const VectorXd
 	for (int i = 1; i < 7; i++) {
 		Matrix4d T = DH2Trans(DH_Table(i-1, 0) + q(i-1), DH_Table(i-1, 1), DH_Table(i-1, 2), DH_Table(i-1, 3));
 		Ri_iminus1 = T.block(0, 0, 3, 3).transpose();
-		//p_i_tilde_star[i-1] = Ri_iminus1 * T.block(0, 3, 3, 1);
-		p_i_tilde_star[i - 1]<< DH_Table(i - 1, 2), DH_Table(i - 1, 1)*sin(DH_Table(i - 1, 3)), DH_Table(i - 1, 1)*cos(DH_Table(i - 1, 3));//(此公式确认正确)
-		w[i] = Ri_iminus1*(w[i - 1] + z*q_dot(i-1));//公式1-53(此公式确认正确)
-		//cout << "w[" << i << "]: " << endl << w[i] << endl;
-		epsilon[i] = Ri_iminus1 * (epsilon[i - 1] + w[i - 1].cross(z * q_dot(i - 1))  + z*q_dot_dot(i-1));//公式1-74(此公式确认正确)
-		//cout << "epsilon[" << i << "]: " << endl << epsilon[i] << endl;
-		a[i] = Ri_iminus1 * a[i - 1] + epsilon[i].cross(p_i_tilde_star[i-1]) + w[i].cross(w[i].cross(p_i_tilde_star[i-1]));//公式2-79
-		//cout << "a[" << i << "]: " << endl << a[i] << endl;
+		p_i_tilde_star[i - 1]<< DH_Table(i - 1, 2), DH_Table(i - 1, 1)*sin(DH_Table(i - 1, 3)), DH_Table(i - 1, 1)*cos(DH_Table(i - 1, 3));
+		w[i] = Ri_iminus1*(w[i - 1] + z*q_dot(i-1));
+		epsilon[i] = Ri_iminus1 * (epsilon[i - 1] + w[i - 1].cross(z * q_dot(i - 1))  + z*q_dot_dot(i-1));
+		a[i] = Ri_iminus1 * a[i - 1] + epsilon[i].cross(p_i_tilde_star[i-1]) + w[i].cross(w[i].cross(p_i_tilde_star[i-1]));
 		rc = r[i - 1].head(3);
-		a_C_i[i] = a[i] + epsilon[i].cross(rc) + w[i].cross(w[i].cross(rc));//公式2-76
-		//cout << "a_C_i[" << i << "]: " << endl << a_C_i[i] << endl;
+		a_C_i[i] = a[i] + epsilon[i].cross(rc) + w[i].cross(w[i].cross(rc));
 	}
 	Vector3d n[7];
 	n[6] << 0, 0, 0;
@@ -458,31 +475,133 @@ VectorXd RobotDynamics::getTorque_Newton_Euler(const VectorXd& q, const VectorXd
 	Matrix4d T;
 	for (int i = 5; i >= 0; i--) {
 		rc = r[i].head(3);
-		F[i] = m[i] * a_C_i[i + 1];//公式2-80(确认正确)
-		//cout << "F[" << i+1 << "]: " << endl << F[i] << endl;
-		N[i] = I_[i] * epsilon[i+1] + w[i+1].cross(I_[i] * w[i+1]);//公式2-73
-		//cout<<"N["<<i+1<<"]: "<<endl<<N[i]<<endl;
+		F[i] = m[i] * a_C_i[i + 1];
+		N[i] = I_C[i] * epsilon[i+1] + w[i+1].cross(I_C[i] * w[i+1]);
 		if (i == 5) {
-			f[i] = F[i];//公式2-72（确认正确）
-			cout << "f[" << i+1 << "]: " << endl << f[i] << endl;
-			n[i] = N[i]+ p_i_tilde_star[i].cross(f[i])+rc.cross(F[i]);//公式2-74
-			cout<< "n[" << i+1 << "]: " << endl << n[i] << endl;
+			f[i] = F[i];
+			n[i] = N[i]+ p_i_tilde_star[i].cross(f[i])+rc.cross(F[i]);
 		}
 		else {
 			T = DH2Trans(DH_Table(i+1, 0) + q(i+1), DH_Table(i+1, 1), DH_Table(i+1, 2), DH_Table(i+1, 3));
 			Ri_iplus1 = T.block(0, 0, 3, 3);
-			f[i] = Ri_iplus1 * f[i + 1] + F[i];//公式2-72
-			cout << "f[" << i+1 << "]: " << endl << f[i] << endl;
-			n[i] = Ri_iplus1 * n[i + 1] + N[i] + p_i_tilde_star[i].cross(f[i]) + rc.cross(F[i]);//公式2-74
-			cout << "n[" << i+1 << "]: " << endl << n[i] << endl;
-			//n[i] = Ri_iplus1 * n[i + 1] + N[i] + (p_i_tilde_star[i] + rc).cross(F[i]) + p_i_tilde_star[i].cross(Ri_iplus1 * f[i + 1]);//公式2-74
+			f[i] = Ri_iplus1 * f[i + 1] + F[i];
+			n[i] = Ri_iplus1 * n[i + 1] + N[i] + p_i_tilde_star[i].cross(f[i]) + rc.cross(F[i]);
 		}
 		Matrix4d T1 = DH2Trans(DH_Table(i, 0) + q(i), DH_Table(i, 1), DH_Table(i, 2), DH_Table(i, 3));
 		Matrix3d Ri_iminus1_ = T1.block(0, 0, 3, 3).transpose();
-		torque(i) = (Ri_iminus1_ * z).transpose()* n[i];//公式2-75
+		torque(i) = (Ri_iminus1_ * z).transpose()* n[i];
 	}
 	return torque;
 }
+void RobotDynamics::identifyDynamicsParameters(const VectorXd& q, const VectorXd& q_dot, const VectorXd& q_dot_dot) {//, const VectorXd& torque=0
+	VectorXd DynamicsParametersparameters[10];
+	Vector3d z;
+	z << 0, 0, 1;
+	Vector3d w[7];//公式1-53
+	w[0] << 0, 0, 0; // 初始化全零向量
+	Vector3d epsilon[7];//公式1-74
+	epsilon[0] << 0, 0, 0; // 初始化全零向量
+	Vector3d a[7];//公式2-79
+	a[0] = g.head(3); // 初始化全零向量
+	Vector3d a_C_i[7];//公式2-76
+	Matrix3d Ri_iminus1[6];
+	Matrix3d Ri_iplus1;
+	Vector3d p_i_tilde_star[6];
+	Vector3d rc;
+	MatrixXd A[6];
+	MatrixXd Astar[6];//用于存储去除线性相关项后的A
+	MatrixXd U(6, 10);
+	MatrixXd Ustar(6, 6);//用于存储去除线性相关项后的U
+	MatrixXd Ti[5];
+	MatrixXd Y=MatrixXd::Zero(6,60);
+	MatrixXd Ytilde=MatrixXd::Zero(6, 36);
+	for (int i = 1; i < 7; i++) {
+		Matrix4d T = DH2Trans(DH_Table(i - 1, 0) + q(i - 1), DH_Table(i - 1, 1), DH_Table(i - 1, 2), DH_Table(i - 1, 3));
+		Ri_iminus1[i-1] = T.block(0, 0, 3, 3).transpose();
+		p_i_tilde_star[i - 1] << DH_Table(i - 1, 2), DH_Table(i - 1, 1)* sin(DH_Table(i - 1, 3)), DH_Table(i - 1, 1)* cos(DH_Table(i - 1, 3));
+		w[i] = Ri_iminus1[i-1] * (w[i - 1] + z * q_dot(i - 1));
+		epsilon[i] = Ri_iminus1[i-1] * (epsilon[i - 1] + w[i - 1].cross(z * q_dot(i - 1)) + z * q_dot_dot(i - 1));
+		a[i] = Ri_iminus1[i-1] * a[i - 1] + epsilon[i].cross(p_i_tilde_star[i - 1]) + w[i].cross(w[i].cross(p_i_tilde_star[i - 1]));
+		rc = r[i - 1].head(3);
+		a_C_i[i] = a[i] + epsilon[i].cross(rc) + w[i].cross(w[i].cross(rc));
+
+		//将动力学参数从耦合中提取出来，构成矩阵A，形状为6*10，公式2-137
+		A[i - 1] = MatrixXd::Zero(6, 10);
+		Astar[i - 1] = MatrixXd::Zero(6, 6);
+		//将epsilon和w,p*还有a转化为算子形式
+		Matrix3d S_epsilon = Operator_S(epsilon[i]);
+		Matrix3d S_w = Operator_S(w[i]);
+		Matrix3d S_p_i_tilde_star = Operator_S(p_i_tilde_star[i-1]);
+		Matrix3d S_a = Operator_S(a[i]);
+		MatrixXd K_epsilon = Operator_K(epsilon[i]);
+		MatrixXd K_w = Operator_K(w[i]);
+
+		//将这些算子填入矩阵A
+		A[i - 1].block(0, 6, 3, 3) = S_epsilon+S_w*S_w;
+		A[i - 1].block(0, 9, 3, 1) = a[i];
+		A[i - 1].block(3, 0, 3, 6) = K_epsilon+ S_w* K_w;
+		A[i - 1].block(3, 6, 3, 3) = S_p_i_tilde_star*(S_epsilon+ S_w * S_w)- S_a;
+		A[i - 1].block(3, 9, 3, 1) = S_p_i_tilde_star*a[i];
+		//cout<<"A"<<i-1<<endl<<A[i - 1] << endl;
+		//将A矩阵中的线性相关项去掉，得到Astar
+		VectorXi linear_independence(6);
+		if (i==1) {
+			linear_independence << 1,3,4,6,8,9;
+			for (int ii = 0; ii < 6; ii++) {
+				Astar[i-1].col(ii) = A[i-1].col(linear_independence(ii));
+			}
+		}else{
+			linear_independence << 0, 1, 2, 6, 7, 8;
+			for (int ii = 0; ii < 6; ii++) {
+				Astar[i - 1].col(ii) = A[i - 1].col(linear_independence(ii));
+			}
+		}
+		cout << "Astar" << i - 1 << endl << Astar[i-1] << endl;
+		//计算Ti
+		if (i < 6) {
+			T = DH2Trans(DH_Table(i, 0) + q(i), DH_Table(i, 1), DH_Table(i, 2), DH_Table(i, 3));
+			Ri_iplus1 = T.block(0, 0, 3, 3);
+			Ti[i - 1] = MatrixXd::Zero(6, 6);//2-143
+			Ti[i - 1].block(0, 0, 3, 3) = Ri_iplus1;
+			Ti[i - 1].block(3, 0, 3, 3) = S_p_i_tilde_star * Ri_iplus1;
+			Ti[i - 1].block(3, 3, 3, 3) = Ri_iplus1;
+			//cout << "Ti" << endl << Ti[i - 1] << endl;
+		}
+	}
+	
+	for (int i = 0; i < 6; i++) {
+		//求取大Y矩阵
+		for (int j = i; j < 6; j++) {
+			RowVectorXd kk(6);
+			kk<<0, 0, 0, Ri_iminus1[i](2, 0), Ri_iminus1[i](2, 1), Ri_iminus1[i](2, 2);//2-145
+			if (j == i) {
+				U = A[j];
+				Ustar = Astar[j];
+			}
+			else {
+				U = A[j];
+				for (int k = i; k < j; k++) {
+					U = Ti[k] * U;
+					Ustar = Ti[k] * Ustar;
+				}
+			}
+			Y.block(i, 10 * j, 1, 10) = kk * U;//2-145*/
+			Ytilde.block(i, 6 * j, 1, 6) = kk * Ustar;//2-145*/
+		}
+	}
+	//cout << "Y:" << endl << Y << endl;
+	//matrix_save_txt(Y, "Y.txt");
+	//cout << "Ytilde:" << endl << Ytilde << endl;
+	//matrix_save_txt(Ytilde, "Ytilde.txt");
+}
+//基于傅里叶级数的激励轨迹
+//输入为时间t
+//返回值为关节角度，关节角速度，关节角加速度，形状为6*3的矩阵
+/*
+VectorXd RobotDynamics::getFourierTrajectory(const VectorXd&t) {
+
+}*/
+
 
 
 int main()
@@ -494,7 +613,7 @@ int main()
 	MatrixXd M_past(6, 6);
 	MatrixXd M_now(6, 6);
 	VectorXd q_now(6);
-	q_now << 0, 0, 0, 0, 0, 0;
+	q_now << 1, 1, 1, 1, 1, 1;
 	
 	VectorXd v(6);
 	v << 2, 2, 2, 2, 2, 2;
@@ -507,10 +626,10 @@ int main()
 	VectorXd torque(6);
 	torque = objRobotDynamics.getTorque(q_now, v, a, M_now);
 	VectorXd G = objRobotDynamics.getGravity();
-	cout << "torque: " << endl << torque << endl;
+	//cout << "torque: " << endl << torque << endl;
 
-	torque = objRobotDynamics.getTorque_Newton_Euler(q_now, v, a);
-	cout << "torque: " << endl << torque << endl;
+	objRobotDynamics.identifyDynamicsParameters(q_now, v, a);
+	//cout << "torque: " << endl << torque << endl;
 
 
 	return 0;
