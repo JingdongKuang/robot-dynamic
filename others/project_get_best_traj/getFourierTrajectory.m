@@ -1,5 +1,5 @@
 function q_qdot_qdotdot = getFourierTrajectory(coefficient_a,coefficient_b,t)
-    wb = 0.2*pi; % 2*pi/T
+    wb = 0.1*pi; % 2*pi/T
     q_qdot_qdotdot = zeros(6, 3); % 初始化输出矩阵
     
     for j = 1:6
@@ -13,5 +13,6 @@ function q_qdot_qdotdot = getFourierTrajectory(coefficient_a,coefficient_b,t)
             q_qdot_qdotdot(j, 3) = q_qdot_qdotdot(j, 3) - coefficient_a(j, k) * k * wb * sin(k * wb * t) + coefficient_b(j, k) * k * wb * cos(k * wb * t);
         end
     end
+    
 end
 

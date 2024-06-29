@@ -60,8 +60,8 @@ L6 = Link('d', 0.1565,  'a', 0,       'alpha', pi/2,  'offset', pi, 'modified','
 robot=SerialLink([L1,L2,L3,L4,L5,L6],'name','E05L');   %SerialLink 类函数
 
 
-robot.display();%展示出机器人的信息
-teach(robot);%调出示教滑块
+%robot.display();%展示出机器人的信息
+%teach(robot);%调出示教滑块
 
 toRad=pi/180;
 q=[3, 2, 2, 4, 5, 6];
@@ -74,7 +74,7 @@ torque=[];
 x=load("x.txt");
 coefficient_a=reshape(x(1:30),5,6)';
 coefficient_b=reshape(x(31:end),5,6)';
-data_size=1000;
+data_size=2500;
 for i=1:data_size
     q_qdot_qdotdot = getFourierTrajectory(coefficient_a,coefficient_b,0.004*i);
     torque_=robot.rne_mdh(q_qdot_qdotdot(:,1)',q_qdot_qdotdot(:,2)',q_qdot_qdotdot(:,3)');

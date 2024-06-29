@@ -2,12 +2,12 @@
 function [c,ceq] = constraint(x)
 coefficient_a=reshape(x(1:30),5,6)';
 coefficient_b=reshape(x(31:end),5,6)';
-qmax=[pi,pi/3,pi/3,pi/2,pi/2,pi];
+qmax=[pi,pi*3/8,pi/2,pi,pi/2,pi];
 qdotmax=[pi,pi,pi,pi,pi,pi];
 qdotdotmax=[3*pi,3*pi,3*pi,3*pi,3*pi,3*pi];
 c=[];
 ceq=[];
-wb = 0.2*pi;
+wb = 0.1*pi;
 for i=1:6
     c1=0;%c1可以用来设置初始角度
     c2=0;
@@ -20,7 +20,7 @@ for i=1:6
         c2=c2+(coefficient_a(i,j)^2+coefficient_b(i,j)^2)^0.5;
         c3=c3+(coefficient_a(i,j)^2+coefficient_b(i,j)^2)^0.5*(wb*j);
         ceq1=ceq1+coefficient_b(i,j)/(wb*j);
-        ceq2=ceq2+coefficient_b(i,j);
+        ceq2=ceq2+coefficient_a(i,j);
         ceq3=ceq3+wb*j*coefficient_b(i,j);
     end
     c1=c1-qmax(i);

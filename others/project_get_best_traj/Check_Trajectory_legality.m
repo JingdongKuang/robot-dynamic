@@ -1,9 +1,9 @@
 clc;
 clear;
+close all;
 
 
-
-%%利用标准D-H法建立多轴机器人
+%%利用SD-H法建立多轴机器人
 clear;
 clc;
 %质心位置
@@ -67,14 +67,65 @@ robot=SerialLink([L1,L2,L3,L4,L5,L6],'name','E05L');   %SerialLink 类函数
 
 %robot.display();%展示出机器人的信息
 %teach(robot);%调出示教滑块
-
-for i = 0:1000
-    pause(0.004)
-    x=load('x.txt');
-    coefficient_a=reshape(x(1:30),5,6)';
-    coefficient_b=reshape(x(31:end),5,6)';
-    q_qdot_qdotdot=getFourierTrajectory(coefficient_a,coefficient_b,0.004*i);
-    disp(q_qdot_qdotdot(:,1)');
-    % q是矩阵，q(i,:)意味着矩阵第i行全部数据
-    robot.plot(q_qdot_qdotdot(:,1)');
+qq(1,:)=[0,0,pi/2,0,0,0];
+vv(1,:)=zeros(1,6);
+v(1,:)=zeros(1,6);
+aa(1,:)=zeros(1,6);
+a(1,:)=zeros(1,6);
+Ytilde_=[];
+YYtilde_=[];
+x=load('x.txt');
+coefficient_a=reshape(x(1:30),5,6)';
+coefficient_b=reshape(x(31:end),5,6)';
+data_size=5000;
+for i = 1:data_size
+    q_qdot_qdotdot=getFourierTrajectory(coefficient_a,coefficient_b,20/data_size*i);
+    if data_size<1000
+        disp(q_qdot_qdotdot(:,1)');
+        robot.plot(q_qdot_qdotdot(:,1)'+[0,0,pi/2,0,0,0]);
+    else
+        qq(i+1,:)=q_qdot_qdotdot(:,1)'+[0,0,pi/2,0,0,0];%
+        vv(i+1,:)=(qq(i+1,:)-qq(i,:))*250; 
+        v(i+1,:)=q_qdot_qdotdot(:,2);
+        aa(i+1,:)=(vv(i+1,:)-vv(i,:))*250;
+        a(i+1,:)=q_qdot_qdotdot(:,3);
+        Ytilde=getYtilde(q_qdot_qdotdot(:,1)+[0,0,pi/2,0,0,0]',q_qdot_qdotdot(:,2),q_qdot_qdotdot(:,3));
+        Ytilde_=[Ytilde_;Ytilde];
+        YYtilde=getYtilde(qq(i+1,:),vv(i+1,:),aa(i+1,:));
+        YYtilde_=[YYtilde_;YYtilde];
+    end
+end
+if data_size>1000
+   
+    
+    for i=1:6
+        figure;
+        grid on;
+        hold on;
+        plot(qq(:,i),'o');
+        title('关节角度')
+    end
+    for i=1:6
+        figure;
+        grid on;
+        hold on;
+        plot(v(:,i),'o');
+        plot(vv(:,i),'+');
+        legend('v','vv')
+        title('关节速度')
+     end
+     for i=1:6
+        figure;
+        grid on;
+        hold on;
+        plot(a(:,i),'o');
+        plot(aa(:,i),'+');
+        legend('a','aa')
+        title('关节加速度')
+    end
+    
+    fprintf("cond of x");
+    cond(Ytilde_(6*250:end-6*250,:))
+    fprintf("cond of diff");
+    cond(YYtilde_(6*250:end-6*250,:))
 end
