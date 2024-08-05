@@ -1,9 +1,10 @@
 
 #include "mian_dynamics.h"
-
+using namespace std;
 int main()
 {
 	RobotDynamics objRobotDynamics;
+	POE_kinematics objPOE_kinematics;
 	ChebyshefFilter objChebyshefFilter;
 	/***/
 	VectorXd q_now(6);
@@ -71,6 +72,12 @@ int main()
 	}
 	objRobotDynamics.identifyDynamicsParameters(Ytilde_, torque_);
 	/**/
-
+	VectorXd axis(3);
+	axis << 0, 0, 1;
+	double theta = 0.5;
+	MatrixXd T = objPOE_kinematics.w2R(axis, theta);
+	cout << "T: " << endl << T << endl;
+	Vector4d w_and_theta = objPOE_kinematics.R2w_and_theta(T);
+	cout << "w_and_theta: " << endl << w_and_theta << endl;
 	return 0;
 }

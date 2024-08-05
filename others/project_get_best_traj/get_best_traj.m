@@ -14,7 +14,7 @@ beq = [];
 lb=[];
 ub=[];
 % Solve the problem. 
-options = optimoptions('fmincon','Display','notify','Algorithm','interior-point','MaxFunEvals',100000);
+options = optimoptions('fmincon','Display','notify','Algorithm','sqp','MaxFunEvals',100000);
 x = fmincon(func,x0,A,b,Aeq,beq,lb,ub,nonlcon,options);
 % x = fmincon(@(x)getCondOfY(x),x0,A,b,Aeq,beq,lb,ub,@(x)constraint(x),options);
 writematrix(x,'x.txt');
@@ -24,6 +24,5 @@ fprintf('cond of x0:')
 getCondOfY(x0)
 fprintf('cond of x:') 
 getCondOfY(x)
-
 
 

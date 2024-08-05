@@ -1,2 +1,3 @@
-#include "vsCollisionDetection.h"
-# include "POE_IKsolver.h"
+#include "DH_dynamics.h"
+#include "POE_kinematics.h"
+#include <iostream>

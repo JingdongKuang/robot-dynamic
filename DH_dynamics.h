@@ -149,6 +149,8 @@ public:
 	MatrixXd getYtilde(const VectorXd& q, const VectorXd& q_dot, const VectorXd& q_dot_dot);//获取Ytilde
 	void identifyDynamicsParameters(const MatrixXd&Ytilde_,const VectorXd& torque_);//辨识动力学参数, const VectorXd& torque
 	MatrixXd getFourierTrajectory(const double& t);//获取傅里叶轨迹
+	VectorXd least_sq_fit(VectorXd x, VectorXd y, int degree);//最小二乘拟合
+	double polynomial_Curve(double x, VectorXd k);//多项式曲线
 private:
 	/*变量声明*/
 	//质量

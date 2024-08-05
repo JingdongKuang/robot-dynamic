@@ -1,7 +1,7 @@
 ﻿// vsCollisionDetection.cpp: 定义应用程序的入口点。
 //
 
-#include "vsCollisionDetection.h"
+#include "DH_dynamics.h"
 using namespace Eigen;
 using namespace std;
 //求矩阵条件数
@@ -755,6 +755,45 @@ VectorXd ZeroPhaseAverageFilter(int width, const VectorXd& data) {
 	return filteredData.reverse();
 }
 
+VectorXd RobotDynamics::least_sq_fit(VectorXd x, VectorXd y, int degree) {
+
+	VectorXd k(degree + 1);
+
+	int len = y.size();
+
+	MatrixXd A = MatrixXd::Ones(len, degree + 1);
+
+	for (int i = 0; i < len; i++) {
+
+		for (int j = 0; j < degree; j++) {
+
+			A(i, j) = pow(x(i), degree - j);
+
+		}
+
+	}
+
+	k = (A.transpose() * A).inverse() * A.transpose() * y;
+
+	return k;
+
+}
+
+double RobotDynamics::polynomial_Curve(double x, VectorXd k) {
+
+	double y = 0;
+
+	int len = k.size();
+
+	for (int i = 0; i < len; i++) {
+
+		y += k(i) * pow(x, len - i - 1);
+
+	}
+
+	return y;
+
+}
 //int main()
 //{
 //	RobotDynamics objRobotDynamics;

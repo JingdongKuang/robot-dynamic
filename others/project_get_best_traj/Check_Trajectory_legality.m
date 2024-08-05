@@ -125,7 +125,7 @@ if data_size>1000
     end
     
     fprintf("cond of x");
-    cond(Ytilde_(6*250:end-6*250,:))
+    cond(Ytilde_)%(6*250:end-6*250,:)
     fprintf("cond of diff");
-    cond(YYtilde_(6*250:end-6*250,:))
+    cond(YYtilde_)%(6*250:end-6*250,:)
 end

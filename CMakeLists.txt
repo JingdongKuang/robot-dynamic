@@ -12,7 +12,7 @@ endif()
 project ("vsCollisionDetection")
 
 # 将源代码添加到此项目的可执行文件。
-add_executable (vsCollisionDetection "vsCollisionDetection.cpp" "vsCollisionDetection.h" "Chebyshef_40hz_Order3.cpp" "Chebyshef_40hz_Order3.h" "rtwtypes.h" "mian_dynamics.cpp" "mian_dynamics.h" "POE_kinematics.h" "POE_kinematics.cpp")
+add_executable (vsCollisionDetection "DH_dynamics.cpp" "DH_dynamics.h" "Chebyshef_40hz_Order3.cpp" "Chebyshef_40hz_Order3.h" "rtwtypes.h" "mian_dynamics.cpp" "mian_dynamics.h" "POE_kinematics.h" "POE_kinematics.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET vsCollisionDetection PROPERTY CXX_STANDARD 20)

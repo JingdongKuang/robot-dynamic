@@ -2,9 +2,9 @@
 function [c,ceq] = constraint(x)
 coefficient_a=reshape(x(1:30),5,6)';
 coefficient_b=reshape(x(31:end),5,6)';
-qmax=[pi,pi*3/8,pi/2,pi,pi/2,pi];
+qmax=[pi,pi*7/16,pi*3/4,pi,pi*3/4,pi];
 qdotmax=[pi,pi,pi,pi,pi,pi];
-qdotdotmax=[3*pi,3*pi,3*pi,3*pi,3*pi,3*pi];
+qdotdotmax=[10*pi,10*pi,10*pi,10*pi,10*pi,10*pi];
 c=[];
 ceq=[];
 wb = 0.1*pi;
