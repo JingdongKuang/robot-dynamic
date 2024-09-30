@@ -1,29 +1,30 @@
 #include "POE_kinematics.h"
 
-//Ö¸Êı»ıÇó½âÕı½â
+//æŒ‡æ•°ç§¯æ±‚è§£æ­£è§£
 MatrixXd POE_kinematics::forward_kinematics(VectorXd q) {
 	MatrixXd T = MatrixXd::Identity(4, 4);
 	return T;
 }
-//Ö¸Êı»ıÇó½âÄæ½â
+//æŒ‡æ•°ç§¯æ±‚è§£é€†è§£
 MatrixXd POE_kinematics::inv_kinematics(MatrixXd T) {
 	VectorXd q = VectorXd::Zero(6);
 	return q;
 }
-//Ö¸Êı»ıÇó½âÑÅ¿Ë±È¾ØÕó
+//æŒ‡æ•°ç§¯æ±‚è§£é›…å…‹æ¯”çŸ©é˜µ
 MatrixXd POE_kinematics::Jacobian(MatrixXd T, VectorXd q) {
 	MatrixXd J = MatrixXd::Zero(6, 6);
 	return J;
 }
-//ÂŞµÂÀïË¹¹«Ê½ÇóĞı×ª¾ØÕó
+//ç½—å¾·é‡Œæ–¯å…¬å¼æ±‚æ—‹è½¬çŸ©é˜µ
 Matrix3d POE_kinematics::w2R(Vector3d w, double theta) {
+	w.normalize();
 	Matrix3d R = Matrix3d::Identity();
 	Matrix3d w_hat = Operator_S(w);
 	R = R + sin(theta) * w_hat + (1 - cos(theta)) * w_hat * w_hat;
 	return R;
 }
-//Ğı×ª¾ØÕóÇóĞı×ªÖá,ĞèÒª×¢Òâ£¬´Ë´¦µ±thetaÎªpiµÄÕûÊı±¶ÊıÊ±£¬»á³öÏÖÆæÒì£¬ÕâÖÖÆæÒì²»¿É±ÜÃâ
-//Í¬Ê±£¬ÎÒÃÇÏŞÖÆthetaµÄ·¶Î§Îª0µ½pi£¬Òò´Ë£¬µ±thetaÎª0Ê±£¬Ğı×ªÖáÎªÈÎÒâÏòÁ¿
+//æ—‹è½¬çŸ©é˜µæ±‚æ—‹è½¬è½´,éœ€è¦æ³¨æ„ï¼Œæ­¤å¤„å½“thetaä¸ºpiçš„æ•´æ•°å€æ•°æ—¶ï¼Œä¼šå‡ºç°å¥‡å¼‚ï¼Œè¿™ç§å¥‡å¼‚ä¸å¯é¿å…
+//åŒæ—¶ï¼Œæˆ‘ä»¬é™åˆ¶thetaçš„èŒƒå›´ä¸º0åˆ°piï¼Œå› æ­¤ï¼Œå½“thetaä¸º0æ—¶ï¼Œæ—‹è½¬è½´ä¸ºä»»æ„å‘é‡
 Vector4d POE_kinematics::R2w_and_theta(Matrix3d R) {
 	double theta;
 	VectorXd w_and_theta=VectorXd::Zero(4);
